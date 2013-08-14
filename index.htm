@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>That Conference / Sessions</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.1/css/bootstrap.min.css"
+        rel="stylesheet" media="screen">
+    <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.1/css/bootstrap-responsive.min.css"
+        rel="stylesheet" media="screen">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/amplifyjs/1.1.0/amplify.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.2.1/knockout-min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/sugar/1.3.9/sugar.min.js"></script>
+</head>
+<body>
+    <div class="navbar navbar-inverse navbar-static-top">
+        <div class="navbar-inner">
+            <a class="brand visible-phone" href="#">That / Sessions</a>
+			<a class="brand visible-tablet visible-desktop" href="#">That Conference / Sessions</a>
+			<form class="navbar-search pull-right" data-bind="submit: doNothing">
+				<input type="text" class="search-query input-small" placeholder="Search" data-bind="value: search, valueUpdate: 'afterkeydown'" />
+			</form>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <div class="btn-group">
+                <button class="btn btn-small" data-bind="css: { 'btn-inverse': onlyFavorites }, click: toggleOnlyFavorites" title="Show only favorites">
+                    <i class="icon-star" data-bind="css: { 'icon-white': onlyFavorites }"></i>
+                    <span class="visible-tablet visible-desktop">only</span>
+                </button>
+                <button class="btn btn-small" data-bind="css: { 'btn-inverse': showMap }, click: toggleMap" title="Show map">
+                    <i class="icon-picture" data-bind="css: { 'icon-white': showMap }"></i>
+                    <span class="visible-tablet visible-desktop">Show map</span>
+                </button>
+				<button class="btn btn-small" data-bind="css: { 'btn-inverse': showOld }, click: toggleShowOld" title="Show old">
+                    <i class="icon-time" data-bind="css: { 'icon-white': showOld }"></i>
+                    <span class="visible-tablet visible-desktop">Show old</span>
+                </button>
+            </div>
+			<div class="btn-group" data-bind="foreach: days" style="margin: 3px">
+                <button class="btn btn-small" data-bind="css: { 'btn-inverse': selected }, click: $root.toggleSelected">
+                    <!--<span class="badge badge-info" style="margin-right: 5px" data-bind="text: count"></span>-->
+                    <span class="visible-tablet visible-desktop" data-bind="text: date.format('{Weekday}')"></span>
+                    <span class="visible-phone" data-bind="text: date.format('{Dow}')"></span>
+                </button>
+            </div>
+			<button class="btn btn-small" data-bind="css: { 'btn-inverse': showAbout }, click: toggleShowAbout" title="About this page">
+				<i class="icon-question-sign" data-bind="css: { 'icon-white': showAbout }"></i>
+				<span class="visible-tablet visible-desktop">About</span>
+			</button>
+        </div>
+
+        <img data-bind="visible: showMap" src="http://www.thatconference.com/content/support/thatmap.png" />
+		
+		<div class="well about" data-bind="visible: showAbout">
+			<h3>About this Page</h3>
+			<p>This is a page for browsing the <a href="http://thatconference.com">That Conference</a> session schedule and marking your favorites.</p>
+			<p>Developed by <a href="http://twitter.com/mheggeseth">Michael Heggeseth</a> (feedback, please!) using 
+				<a href="http://getbootstrap.com/2.3.2/">Twitter Bootstrap</a>,
+				<a href="http://knockoutjs.com">KnockoutJS</a>,
+				<a href="http://jquery.com">jQuery</a>,
+				<a href="http://amplifyjs.com">AmplifyJS</a>, and
+				<a href="http://sugarjs.com">Sugar</a></p>
+			<p>
+			<a class="btn btn-primary" href="http://github.com/mheggeseth/ThatSessions">
+				GitHub
+			</a>
+		  </p>
+		</div>
+
+        <!-- ko foreach: selectedSessions -->
+        <div class="row">
+            <div class="well well-small">
+                <!--<h5>-->
+                    <button class="btn btn-mini" data-bind="css: { 'btn-inverse': isFavorite }, click: $root.toggleFavorite" title="Favorite?">
+                        <i class="icon-star" data-bind="css: { 'icon-white': isFavorite }"></i>
+                    </button>
+                    <span class="label label-info" data-bind="text: ScheduledDateTime.format('{h}:{mm} {tt}') + ' | ' + ScheduledRoom">
+                    </span>
+					<span class="label" data-bind="text: Category + ' | ' + Level">
+                    </span>
+					<strong data-bind="text: Title"></strong>
+                    <!--<span data-bind="text: ScheduledRoom"></span>-->
+                    <!-- ko foreach: People -->
+                    <small style="margin-right: 5px">
+                        <a data-bind="text: FirstName + ' ' + LastName, attr: { href: WebSite }"></a>
+                    </small>
+                    <!-- /ko -->
+                    <a class="btn btn-mini" href="javascript:void(0)" data-bind="collapse: '#desc' + SessionId"
+                        title="show description"><i class="icon-align-justify"></i></a>
+                <!--</h5>-->
+                <p data-bind="text: Description, attr: { id: 'desc' + SessionId }" class="collapse">
+                </p>
+            </div>
+        </div>
+        <!-- /ko -->
+    </div>
+
+    <script type='text/javascript'>//<![CDATA[ 
+        //TODO: listview, offline, IE bummer, favorites, amplify caching, gravatar, google analytics
+
+        function jsonStringToDate(strDate)
+        {
+            /// <param name="strDate" type="String"></param>
+            //Format "/Date(1364817449533)/"
+            var strDate = strDate.replace(/\/Date\(([0-9]+)\)\//, "$1");
+            return new Date(parseInt(strDate, 10));
+        }
+
+        $(function ()
+        {
+            $(".about a").attr("target", "_blank");
+			
+			ko.bindingHandlers.collapse = {
+                init: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext)
+                {
+                    $(element).attr({ "data-toggle": "collapse", "data-target": valueAccessor() });
+                    setTimeout(function () { $(element).collapse({ toggle: false }); }, 0);
+                }
+            };
+
+            var viewModel = {
+                sessions: ko.observableArray([]),
+                search: ko.observable(''),
+                onlyFavorites: ko.observable(false),
+                showMap: ko.observable(false),
+				showOld: ko.observable(false),
+				showAbout: ko.observable(false),
+                doNothing: function ()
+                {
+                    //Bwahahahahaha
+                }
+            };
+			
+			viewModel.toggleShowOld = function ()
+            {
+                this.showOld(!this.showOld());
+            }.bind(viewModel);
+
+            viewModel.toggleOnlyFavorites = function ()
+            {
+                this.onlyFavorites(!this.onlyFavorites());
+            }.bind(viewModel);
+
+            viewModel.toggleMap = function ()
+            {
+                this.showMap(!this.showMap());
+            }.bind(viewModel);
+			
+			viewModel.toggleShowAbout = function ()
+            {
+                this.showAbout(!this.showAbout());
+            }.bind(viewModel);
+
+            viewModel.toggleFavorite = function (session)
+            {
+                session.isFavorite(!session.isFavorite());
+            };
+
+            viewModel.delayedSearch = ko.computed(viewModel.search).extend({ throttle: 250 });
+
+            viewModel.days = ko.computed(function viewModel$days()
+            {
+                var days = ko.utils.arrayGetDistinctValues(ko.utils.arrayMap(this.sessions(),
+                    function (session)
+                    {
+                        var sessionDateTime = session.ScheduledDateTime.clone();
+                        if (this.showOld() || sessionDateTime.clone().addHours(1).isFuture())
+                        {
+                            return sessionDateTime.beginningOfDay().getTime();
+                        }
+                    }.bind(this)));
+                days.sort();
+                days = ko.utils.arrayFilter(days, function (day) { return day; });
+                days = ko.utils.arrayMap(days,
+                    function (day)
+                    {
+                        return { date: Date.create(day), selected: ko.observable(false) };
+                    });
+                if (days.length)
+                {
+                    var selectedDateValue = amplify.store("selectedDateValue");
+                    var selectedDay;
+                    if (selectedDateValue)
+                    {
+                        selectedDay = ko.utils.arrayFirst(days, function (day) { return day.date.valueOf() === selectedDateValue; });
+                    }
+                    if (selectedDay)
+                    {
+                        selectedDay.selected(true);
+                    }
+                    else
+                    {
+                        days[0].selected(true); //Select the first day by default
+                    }
+                }
+                return days;
+            }, viewModel);
+
+            viewModel.selectedDay = ko.computed(function ()
+            {
+                return ko.utils.arrayFirst(this.days(), function (day) { return day.selected(); });
+            }, viewModel);
+
+            //viewModel.categories = ko.computed(function viewModel$categories()
+            //{
+            //    var categories = [];
+            //    ko.utils.arrayForEach(this.sessions(), function (session)
+            //    {
+            //        var category = ko.utils.arrayFirst(categories, function (cat) { return cat.name === session.Category });
+            //        if (!category)
+            //        {
+            //            categories.push({ name: session.Category, count: 1, selected: ko.observable(true) });
+            //        }
+            //        else
+            //        {
+            //            category.count++;
+            //        }
+            //    });
+            //    return categories;
+            //}, viewModel);
+
+            //viewModel.selectedCategories = ko.computed(function viewModel$selectedCategories()
+            //{
+            //    return ko.utils.arrayFilter(this.categories(), function (category)
+            //    {
+            //        return category.selected();
+            //    });
+            //}, viewModel);
+
+            //viewModel.allCategoriesSelected = ko.computed(function ()
+            //{
+            //    return !ko.utils.arrayFirst(this.categories(), function (category) { return !category.selected(); });
+            //}, viewModel);
+
+            viewModel.selectedSessions = ko.computed(function viewModel$selectedSessions()
+            {
+                //var selectedCategories = ko.utils.arrayMap(this.selectedCategories(), function (category) { return category.name; });
+                var selectedDay = this.selectedDay();
+                var search = this.delayedSearch().toLowerCase();
+                var selectedSessions = ko.utils.arrayFilter(this.sessions(), function (session)
+                {
+                    var searchResult = true;
+                    if (search)
+                    {
+                        searchResult = false;
+                        searchResult = (session.Title.toLowerCase().indexOf(search) > -1) || (session.Description.toLowerCase().indexOf(search) > -1);
+                        searchResult = searchResult || !!ko.utils.arrayFirst(session.People, function (person)
+                        {
+                            return (person.FirstName.toLowerCase().indexOf(search) > -1) || (person.LastName.toLowerCase().indexOf(search) > -1);
+                        });
+                    }
+                    var dateResult = session.ScheduledDateTime.clone().beginningOfDay().valueOf() === selectedDay.date.valueOf();
+					var timeResult = this.showOld() || session.ScheduledDateTime.clone().addHours(1).isFuture();
+                    var favoritesResult = !this.onlyFavorites() || session.isFavorite();
+                    //return ((selectedCategories.indexOf(session.Category) > -1) && searchResult);
+                    return (session.Accepted && dateResult && searchResult && favoritesResult && timeResult);
+                }.bind(this));
+                return selectedSessions.sortBy(function (session) { return session.ScheduledDateTime.valueOf() + parseInt(session.Level,10); });
+            }, viewModel);
+
+            viewModel.toggleSelected = function toggleSelected(clickedDay)
+            {
+                if (!clickedDay.selected())
+                {
+                    clickedDay.selected(true);
+                    ko.utils.arrayForEach(this.days(),
+                        function (day)
+                        {
+                            if (day.date.valueOf() !== clickedDay.date.valueOf())
+                            {
+                                day.selected(false);
+                            }
+                        });
+                }
+            }.bind(viewModel);
+
+            ko.applyBindings(viewModel);
+
+            amplify.request.define("sessions", "ajax", {
+                url: "//www.thatconference.com/odata/api.svc/Sessions?$format=json&$expand=People,People1&$callback=?",
+                dataType: "jsonp"
+            });
+
+            
+            amplify.request("sessions", function (data)
+            {
+                var favoriteSessionIDs = amplify.store("favoriteSessionIDs");
+                for (var i = 0; i < data.d.length; i++)
+                {
+                    var session = data.d[i];
+                    session.ScheduledDateTime = jsonStringToDate(session.ScheduledDateTime);
+                    session.isFavorite = ko.observable(favoriteSessionIDs && (favoriteSessionIDs.indexOf(session.SessionId) > -1));
+                }
+                viewModel.sessions(data.d);
+                console.log(data.d[0]);
+
+                viewModel.favoriteSessionIDs = ko.computed(function ()
+                {
+                    var favSessions = ko.utils.arrayFilter(this.sessions(), function (session) { return session.isFavorite(); });
+                    var favSessionIDs = ko.utils.arrayMap(favSessions, function (session) { return session.SessionId; });
+                    return favSessionIDs;
+                }, viewModel);
+
+                viewModel.favoriteSessionIDs.subscribe(function (newValue)
+                {
+                    amplify.store("favoriteSessionIDs", newValue);
+                });
+
+                viewModel.selectedDay.subscribe(function (newValue)
+                {
+                    amplify.store("selectedDateValue", newValue.date.valueOf());
+                });
+
+            });
+        });
+        //]]>  
+    </script>
+</body>
+</html>
+
