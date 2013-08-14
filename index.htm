@@ -31,11 +31,11 @@
                     <i class="icon-star" data-bind="css: { 'icon-white': onlyFavorites }"></i>
                     <span class="visible-tablet visible-desktop">only</span>
                 </button>
-                <button class="btn btn-small" data-bind="css: { 'btn-inverse': showMap }, click: toggleMap" title="Show map">
+                <button class="btn btn-small" data-bind="css: { 'btn-inverse': showMap }, click: toggleMap" title="Show conference center map">
                     <i class="icon-picture" data-bind="css: { 'icon-white': showMap }"></i>
                     <span class="visible-tablet visible-desktop">Show map</span>
                 </button>
-				<button class="btn btn-small" data-bind="css: { 'btn-inverse': showOld }, click: toggleShowOld" title="Show old">
+				<button class="btn btn-small" data-bind="css: { 'btn-inverse': showOld }, click: toggleShowOld" title="Show old sessions">
                     <i class="icon-time" data-bind="css: { 'icon-white': showOld }"></i>
                     <span class="visible-tablet visible-desktop">Show old</span>
                 </button>
@@ -57,13 +57,12 @@
 		
 		<div class="well about" data-bind="visible: showAbout">
 			<h3>About this Page</h3>
-			<p>This is a page for browsing the <a href="http://thatconference.com">That Conference</a> session schedule and marking your favorites.</p>
 			<p>Developed by <a href="http://twitter.com/mheggeseth">Michael Heggeseth</a> (feedback, please!) using 
-				<a href="http://getbootstrap.com/2.3.2/">Twitter Bootstrap</a>,
-				<a href="http://knockoutjs.com">KnockoutJS</a>,
-				<a href="http://jquery.com">jQuery</a>,
-				<a href="http://amplifyjs.com">AmplifyJS</a>, and
-				<a href="http://sugarjs.com">Sugar</a></p>
+				<a href="http://getbootstrap.com/2.3.2/">Twitter Bootstrap</a> (style, responsive design),
+				<a href="http://knockoutjs.com">KnockoutJS</a> (data binding, page behavior),
+				<a href="http://amplifyjs.com">AmplifyJS</a> (AJAX request, in-browser data storage),
+				<a href="http://jquery.com">jQuery</a> (dependency of AmplifyJS.request, minor DOM manipulation), and
+				<a href="http://sugarjs.com">Sugar</a> (useful utilities for dates and arrays)</p>
 			<p>
 			<a class="btn btn-primary" href="http://github.com/mheggeseth/ThatSessions">
 				GitHub
