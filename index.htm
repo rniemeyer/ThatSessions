@@ -26,7 +26,7 @@
 
     <div class="container">
         <div class="row">
-            <div class="btn-group">
+            <div class="btn-group" style="margin-top: 3px; margin-bottom: 3px;">
                 <button class="btn btn-small" data-bind="css: { 'btn-inverse': onlyFavorites }, click: toggleOnlyFavorites" title="Show only favorites">
                     <i class="icon-star" data-bind="css: { 'icon-white': onlyFavorites }"></i>
                     <span class="visible-tablet visible-desktop">only</span>
@@ -40,17 +40,19 @@
                     <span class="visible-tablet visible-desktop">Show old</span>
                 </button>
             </div>
-			<div class="btn-group" data-bind="foreach: days" style="margin: 3px">
+			<div class="btn-group" data-bind="foreach: days" style="margin-top: 3px; margin-bottom: 3px;">
                 <button class="btn btn-small" data-bind="css: { 'btn-inverse': selected }, click: $root.toggleSelected">
                     <!--<span class="badge badge-info" style="margin-right: 5px" data-bind="text: count"></span>-->
                     <span class="visible-tablet visible-desktop" data-bind="text: date.format('{Weekday}')"></span>
                     <span class="visible-phone" data-bind="text: date.format('{Dow}')"></span>
                 </button>
             </div>
-			<button class="btn btn-small" data-bind="css: { 'btn-inverse': showAbout }, click: toggleShowAbout" title="About this page">
-				<i class="icon-question-sign" data-bind="css: { 'icon-white': showAbout }"></i>
-				<span class="visible-tablet visible-desktop">About</span>
-			</button>
+            <div class="btn-group" style="margin-top: 3px; margin-bottom: 3px;">
+    			<button class="btn btn-small" data-bind="css: { 'btn-inverse': showAbout }, click: toggleShowAbout" title="About this page">
+    				<i class="icon-question-sign" data-bind="css: { 'icon-white': showAbout }"></i>
+    				<span class="visible-tablet visible-desktop">About</span>
+    			</button>
+            </div>
         </div>
 
         <img data-bind="visible: showMap" src="http://www.thatconference.com/content/support/thatmap.png" />
@@ -252,7 +254,7 @@
                             return (person.FirstName.toLowerCase().indexOf(search) > -1) || (person.LastName.toLowerCase().indexOf(search) > -1);
                         });
                     }
-                    var dateResult = session.ScheduledDateTime.clone().beginningOfDay().valueOf() === selectedDay.date.valueOf();
+                    var dateResult = selectedDay && session.ScheduledDateTime.clone().beginningOfDay().valueOf() === selectedDay.date.valueOf();
 					var timeResult = this.showOld() || session.ScheduledDateTime.clone().addHours(1).isFuture();
                     var favoritesResult = !this.onlyFavorites() || session.isFavorite();
                     //return ((selectedCategories.indexOf(session.Category) > -1) && searchResult);
@@ -295,6 +297,15 @@
                     session.isFavorite = ko.observable(favoriteSessionIDs && (favoriteSessionIDs.indexOf(session.SessionId) > -1));
                 }
                 viewModel.sessions(data.d);
+				var futureSessions = ko.utils.arrayFilter(viewModel.sessions(), function(session) 
+                    {
+                        return session.ScheduledDateTime.clone().addHours(1).isFuture();
+                    });
+                if (!futureSessions.length)
+                {
+                    viewModel.showOld(true);
+                }
+
                 console.log(data.d[0]);
 
                 viewModel.favoriteSessionIDs = ko.computed(function ()
@@ -311,7 +322,10 @@
 
                 viewModel.selectedDay.subscribe(function (newValue)
                 {
-                    amplify.store("selectedDateValue", newValue.date.valueOf());
+                    if (newValue)
+					{
+						amplify.store("selectedDateValue", newValue.date.valueOf());
+					}
                 });
 
             });
