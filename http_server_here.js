@@ -23,11 +23,12 @@ http.createServer(function(request, response) {
     if (fs.statSync(filename).isDirectory()) {
       //Use first existing default document
       for (var i = 0; i < defaultDocuments.length; i++) {
-        if (fs.existsSync(path.join(filename, defaultDocuments[i]))) {
-          filename = path.join(filename, defaultDocuments[i]);
+        var filepath = path.join(filename, defaultDocuments[i]);
+        if (fs.existsSync(filepath)) {
+          filename = filepath;
           break;
         }
-      };
+      }
     }
 
 
