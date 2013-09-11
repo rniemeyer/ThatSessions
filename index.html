@@ -18,6 +18,7 @@
     </nav>
 
     <div class="container">
+        <span data-bind="visible: !sessions().length">Loading sessions...</span>
         <ul class="list-unstyled" data-bind="foreach: sessions">
             <li data-bind="text: Title"></li>
         </ul>
