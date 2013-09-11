@@ -18,25 +18,31 @@
     </nav>
 
     <div class="container">
-        <ul id="sessionList" class="list-unstyled"></ul>
+        <ul class="list-unstyled" data-bind="foreach: sessions">
+            <li data-bind="text: Title"></li>
+        </ul>
     </div>
 
     <!--<script src="//code.jquery.com/jquery.js"></script>-->
     <script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+    <script type="text/javascript" src="js/knockout-2.3.0.js"></script>
     <!--<script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>-->
     <script type="text/javascript" src="js/bootstrap.min.js"></script>
     <script type="text/javascript">
+        var viewModel = {
+            sessions: ko.observableArray()
+        };
+
         $.ajax({
             url: "http://www.thatconference.com/odata/api.svc/Sessions?$format=json&$callback=?",
             dataType: "jsonp",
             success: function (data) {
-                var sessions = data.d;
-                var $sessionList = $("#sessionList");
-                $.each(sessions, function(index, session) {
-                    $("<li></li>").text(session.Title).appendTo($sessionList);
-                });
+                viewModel.sessions(data.d);
             }
         });
+
+        //find KO binding declarations and associate them with target viewModel members
+        ko.applyBindings(viewModel);
     </script>
   </body>
 </html>
