@@ -22,10 +22,10 @@
     </nav>
 
     <div class="container">
-        <span data-bind="visible: !sessions().length">Loading sessions...</span>
-        <ul class="list-unstyled" data-bind="foreach: sessions">
-            <li data-bind="text: Title"></li>
-        </ul>
+        <div class="alert alert-info" data-bind="visible: !sessions().length">Loading sessions...</div>
+        <div class="list-group" data-bind="foreach: sessions">
+            <a href="javascript:void();" class="list-group-item" data-bind="text: Title"></a>
+        </div>
     </div>
 
     <!--<script src="//code.jquery.com/jquery.js"></script>-->
