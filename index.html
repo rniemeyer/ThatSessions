@@ -21,14 +21,19 @@
 
     <div class="container">
         <div class="alert alert-info" data-bind="visible: !sessions().length">Loading sessions...</div>
-        <div class="list-group" data-bind="foreach: sessions">
-            <a href="javascript:void();" class="list-group-item" data-bind="text: Title"></a>
-        </div>
+        <ul class="list-group" data-bind="foreach: sessions">
+            <li class="list-group-item">
+                <span class="label label-primary" data-bind="text: new moment(ScheduledDateTime).format('ddd M/D/YY h:mm a') + ' | ' + ScheduledRoom"></span>
+                <span class="label label-default" data-bind="text: Category + ' | ' + Level"></span>
+                <h4 class="list-group-item-heading" style="margin-top:5px" data-bind="text: Title"></h4>
+            </li>
+        </ul>
     </div>
 
     <script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
     <script type="text/javascript" src="js/knockout-2.3.0.js"></script>
     <script type="text/javascript" src="js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/moment.min.js"></script>
     <script type="text/javascript">
         var viewModel = {
             sessions: ko.observableArray()
