@@ -37,7 +37,7 @@
     <script type="text/javascript" src="sessionList.js"></script>
     <script type="text/javascript">
         var viewModel = {
-            sessions: new SessionList()
+            sessions: SessionList()
         };
 
         $.ajax({
@@ -45,7 +45,7 @@
             dataType: "jsonp",
             success: function (data) {
                 for (var i = 0; i < data.d.length; i++) {
-                    viewModel.sessions.push(new Session(data.d[i]));
+                    viewModel.sessions.push(Session(data.d[i]));
                 }
             }
         });

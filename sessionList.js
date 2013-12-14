@@ -2,7 +2,7 @@
 
 SessionList = function (list) {
 	for (var i = 0; list && i < list.length; i++) {
-		list[i] = new Session(list[i]);
+		list[i] = Session(list[i]);
 	};
 	var obj = ko.observableArray(list);
 	obj.favorites = ko.computed(function () {
@@ -14,11 +14,10 @@ SessionList = function (list) {
 };
 
 Session = function (sessionObject) {
-	for (var prop in sessionObject) {
-		if (sessionObject.hasOwnProperty(prop)) {
-			this[prop] = sessionObject[prop];
-		}
+	//Only make the object a session if it isn't already
+	if (!ko.isObservable(sessionObject.isFavorite)) {
+		sessionObject.ScheduledDateTime = new moment(sessionObject.ScheduledDateTime);
+		sessionObject.isFavorite = ko.observable(false);
 	}
-	this.ScheduledDateTime = new moment(this.ScheduledDateTime);
-	this.isFavorite = ko.observable(false);
+	return sessionObject;
 };
