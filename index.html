@@ -20,24 +20,45 @@
     </nav>
 
     <div class="container">
+        <div class="btn-group" style="margin-bottom: 5px">
+            <button class="btn btn-default btn-sm" data-bind="css: { 'btn-info': sessions.onlyFavorites }, click: toggle(sessions.onlyFavorites)" title="Show only favorites">
+                <span class="glyphicon glyphicon-star"></span>
+                <span class="visible-tablet visible-desktop">only</span>
+            </button>
+            <button class="btn btn-default btn-sm" data-bind="css: { 'btn-info': sessions.showOld }, click: toggle(sessions.showOld)" title="Show old sessions">
+                <i class="glyphicon glyphicon-time"></i>
+                <span class="visible-tablet visible-desktop">Show old</span>
+            </button>
+        </div>
         <div class="alert alert-info" data-bind="visible: !sessions().length">Loading sessions...</div>
-        <ul class="list-group" data-bind="foreach: sessions">
+        <ul class="list-group" data-bind="foreach: sessions.selected">
             <li class="list-group-item">
-                <span class="label label-primary" data-bind="text: ScheduledDateTime.format('ddd M/D/YY h:mm a') + ' | ' + ScheduledRoom"></span>
+                <button class="btn btn-default btn-xs" data-bind="css: { 'btn-info': isFavorite }, click: $root.toggle(isFavorite)" title="Mark as favorite">
+                    <span class="glyphicon glyphicon-star"></span>
+                </button>
+                <span class="label label-primary" data-bind="text: ScheduledDateTime.format('h:mm a') + ' | ' + ScheduledRoom"></span>
                 <span class="label label-default" data-bind="text: Category + ' | ' + Level"></span>
-                <h4 class="list-group-item-heading" style="margin-top:5px" data-bind="text: Title"></h4>
+                <h5 class="list-group-item-heading" style="margin-top:5px" data-bind="text: Title"></h5>
             </li>
         </ul>
     </div>
 
     <script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
     <script type="text/javascript" src="js/knockout-3.0.0.js"></script>
+    <script type="text/javascript" src="js/knockout-projections-1.0.0.min.js"></script>
     <script type="text/javascript" src="js/bootstrap.min.js"></script>
     <script type="text/javascript" src="js/moment.min.js"></script>
     <script type="text/javascript" src="sessionList.js"></script>
     <script type="text/javascript">
         var viewModel = {
-            sessions: SessionList()
+            sessions: SessionList(),
+            toggle: function (observable) {
+                if (ko.isObservable(observable)) {
+                    return function () {
+                        observable(!observable());
+                    };
+                }
+            }
         };
 
         $.ajax({
