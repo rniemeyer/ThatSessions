@@ -8,45 +8,43 @@ SessionList = function (s) {
 	list.onlyFavorites = ko.observable(false);
 	list.showOld = ko.observable(true);
 	list.days = ko.computed(function days() {
-		var days = ko.utils.arrayMap(list(),
-			function days$arrayMap(session)
+		var sessionList = list();
+
+		var days = [];
+		for (var i = 0; i < sessionList.length; i++) {
+			var sessionDateTime = moment(sessionList[i].ScheduledDateTime); //Make a clone that we can modify
+			if (list.showOld() || moment(sessionDateTime).add("hours", 1).isAfter())
 			{
-				var sessionDateTime = moment(session.ScheduledDateTime);
-				if (list.showOld() || moment(sessionDateTime).add("hours", 1).isAfter())
+				//Include this session's date in the days array
+				sessionDateTime.startOf("day");
+				if (!days.some(function(day) { return sessionDateTime.isSame(day.date); }))
 				{
-					return sessionDateTime.startOf("day").valueOf();
+					//This date isn't in the days array yet
+					days.push({ date: sessionDateTime, selected: ko.observable(false) });
 				}
-			});
-		days = ko.utils.arrayFilter(days, function (day) { return day; }); //drop any items that are null or undefined
-		var distinctDays = ko.utils.arrayGetDistinctValues(days);
-		distinctDays.sort();
-		distinctDays = ko.utils.arrayMap(distinctDays,
-			function (dayMs)
-			{
-				return { date: moment(dayMs), selected: ko.observable(false) };
-			});
+			}
+		};
+		days.sort(function (a,b) { return a.date.diff(b.date); });
+
 		//Ensure mutual exclusivity in selection
-		ko.utils.arrayForEach(distinctDays,
-			function(day)
-			{
-				day.selected.subscribe(function(value)
-				{
-					if (value)
-					{
-						for (var i = 0; i < distinctDays.length; i++) {
-							if (distinctDays[i] !== day)
-							{
-								distinctDays[i].selected(false);
+		ko.utils.arrayForEach(days,
+			function(day) {
+				day.selected.subscribe(function(value) {
+					if (value) {
+						for (var i = 0; i < days.length; i++) {
+							if (days[i] !== day) {
+								days[i].selected(false);
 							}
 						};
 					}
 				});
 			});
-		if (distinctDays.length)
+
+		if (days.length)
 		{
-			distinctDays[0].selected(true);
+			days[0].selected(true);
 		}
-		return distinctDays;
+		return days;
 	});
 	list.selectedDay = ko.computed(function selectedDay() 
 	{
