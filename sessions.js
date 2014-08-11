@@ -21,7 +21,7 @@ $(function ()
     };
 
     var viewModel = {
-        sessions: ko.observableArray([]),
+        sessionsByDay: ko.observableArray([]),
         search: ko.observable(''),
         onlyFavorites: ko.observable(false),
         showMap: ko.observable(false),
@@ -57,6 +57,12 @@ $(function ()
     {
         session.isFavorite(!session.isFavorite());
     };
+
+    viewModel.sessions = ko.computed(function() {
+        var flatDays = _.flatten(viewModel.sessionsByDay(), "TimeSlots");
+        var flatSessions = _.flatten(flatDays, "Sessions");
+        return flatSessions;
+    });
 
     viewModel.delayedSearch = ko.computed(viewModel.search).extend({ throttle: 250 });
 
@@ -146,7 +152,7 @@ $(function ()
             {
                 searchResult = false;
                 searchResult = (session.Title.toLowerCase().indexOf(search) > -1) || (session.Description.toLowerCase().indexOf(search) > -1);
-                searchResult = searchResult || !!ko.utils.arrayFirst(session.People, function (person)
+                searchResult = searchResult || !!ko.utils.arrayFirst(session.Speakers, function (person)
                 {
                     return (person.FirstName.toLowerCase().indexOf(search) > -1) || (person.LastName.toLowerCase().indexOf(search) > -1);
                 });
@@ -182,19 +188,65 @@ $(function ()
     
     amplify.request("sessions", function (data)
     {
-        //data.ScheduledSessions
-        // by day
-        //     by timeslot
+        //data.ScheduledSessions[]
+            // Day = "Sat 8/9"
+            // TimeSlots[]
+                // Time = "8:30 AM"
+                // Sessions[]
+                    // Accepted: true
+                    // Canceled: false
+                    // Category: "That Conference"
+                    // Description: "On August 9th and 10th, That Conference will host the 2014 Midwest GiveCamp. This year, Midwest Midwest GiveCamp and That Conference will team up with the Humanitarian Toolbox in a quest to help build software in support of disaster relief. This is a free event for all paid attendees and food will be provided."
+                    // Id: 5468
+                    // IsFamilyApproved: false
+                    // IsUserFavorite: null
+                    // LastUpdated: "2014-08-08T11:26:21.693"
+                    // Level: "100"
+                    // ScheduledDateTime: Sat Aug 09 2014 08:30:00 GMT-0500 (Central Daylight Time)
+                    // ScheduledRoom: "Cypress"
+                    // SessionLinks: Array[0]
+                    // ShowMoreDetails: false
+                    // Speakers: Array[1]
+                        // 0: Object
+                        // Biography: "The best developer conference!"
+                        // Company: null
+                        // Facebook: null
+                        // FirstName: "That"
+                        // GitHub: null
+                        // GooglePlus: null
+                        // HeadShot: "/cloud/profilephotos/That-Conference-b09e7430-5905-418e-b775-fb08f8e814c8-635349489932052255.png"
+                        // LastName: "Conference"
+                        // LastUpdated: "2014-05-14T14:24:22.567"
+                        // LinkedIn: null
+                        // Title: null
+                        // Twitter: "@ThatConference"
+                        // UserName: "TCAdmin"
+                        // WebSite: "http://www.thatconference.com"
+                        // __proto__: Object
+                        // length: 1
+                        // __proto__: Array[0]
+                    // Tags: Array[2]
+                    // Title: "GiveCamp and The Humanitarian Toolbox"
+                    // Updated: true
 
         var favoriteSessionIDs = amplify.store("favoriteSessionIDs");
-        for (var i = 0; i < data.d.length; i++)
+        for (var i = 0; i < data.ScheduledSessions.length; i++)
         {
-            var session = data.d[i];
-            session.ScheduledDateTime = jsonStringToDate(session.ScheduledDateTime);
-            session.isFavorite = ko.observable(favoriteSessionIDs && (favoriteSessionIDs.indexOf(session.SessionId) > -1));
-        }
-        viewModel.sessions(data.d);
-		var futureSessions = ko.utils.arrayFilter(viewModel.sessions(), function(session) 
+            var sessionsByDay = data.ScheduledSessions[i];
+            for (var j = 0; j < sessionsByDay.TimeSlots.length; j++) {
+                var sessionsByTimeslot = sessionsByDay.TimeSlots[j];
+                for (var k = 0; k < sessionsByTimeslot.Sessions.length; k++) {
+                    var session = sessionsByTimeslot.Sessions[k];
+                    var dateTimeString = sessionsByDay.Day.split(" ")[1] + " " + sessionsByTimeslot.Time;
+                    session.ScheduledDateTime = Date.create(dateTimeString);
+                    session.isFavorite = ko.observable(favoriteSessionIDs && (favoriteSessionIDs.indexOf(session.Id) > -1));
+                };
+            };
+        };
+
+        viewModel.sessionsByDay(data.ScheduledSessions);
+
+        var futureSessions = ko.utils.arrayFilter(viewModel.sessions(), function(session) 
             {
                 return session.ScheduledDateTime.clone().addHours(1).isFuture();
             });
@@ -203,12 +255,10 @@ $(function ()
             viewModel.showOld(true);
         }
 
-        console.log(data.d[0]);
-
         viewModel.favoriteSessionIDs = ko.computed(function ()
         {
             var favSessions = ko.utils.arrayFilter(this.sessions(), function (session) { return session.isFavorite(); });
-            var favSessionIDs = ko.utils.arrayMap(favSessions, function (session) { return session.SessionId; });
+            var favSessionIDs = ko.utils.arrayMap(favSessions, function (session) { return session.Id; });
             return favSessionIDs;
         }, viewModel);
 

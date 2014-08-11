@@ -12,6 +12,7 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.2.1/knockout-min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/sugar/1.3.9/sugar.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
     <script>
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
       (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -95,15 +96,15 @@
                     </span>
 					<strong data-bind="text: Title"></strong>
                     <!--<span data-bind="text: ScheduledRoom"></span>-->
-                    <!-- ko foreach: People -->
+                    <!-- ko foreach: Speakers -->
                     <small style="margin-right: 5px">
                         <a data-bind="text: FirstName + ' ' + LastName, attr: { href: WebSite }"></a>
                     </small>
                     <!-- /ko -->
-                    <a class="btn btn-mini" href="javascript:void(0)" data-bind="collapse: '#desc' + SessionId"
+                    <a class="btn btn-mini" href="javascript:void(0)" data-bind="collapse: '#desc' + Id"
                         title="show description"><i class="icon-align-justify"></i></a>
                 <!--</h5>-->
-                <p data-bind="text: Description, attr: { id: 'desc' + SessionId }" class="collapse">
+                <p data-bind="text: Description, attr: { id: 'desc' + Id }" class="collapse">
                 </p>
             </div>
         </div>
