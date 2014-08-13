@@ -68,29 +68,18 @@ $(function ()
 
     viewModel.days = ko.computed(function viewModel$days()
     {
-        var days = ko.utils.arrayGetDistinctValues(ko.utils.arrayMap(this.sessions(),
-            function (session)
-            {
-                var sessionDateTime = session.ScheduledDateTime.clone();
-                if (this.showOld() || sessionDateTime.clone().addHours(1).isFuture())
-                {
-                    return sessionDateTime.beginningOfDay().getTime();
-                }
-            }.bind(this)));
-        days.sort();
-        days = ko.utils.arrayFilter(days, function (day) { return day; });
-        days = ko.utils.arrayMap(days,
+        var days = ko.utils.arrayFilter(this.sessionsByDay(),
             function (day)
             {
-                return { date: Date.create(day), selected: ko.observable(false) };
-            });
+                return this.showOld() || day.Day >= Date.create("today");
+            }.bind(this));
         if (days.length)
         {
             var selectedDateValue = amplify.store("selectedDateValue");
             var selectedDay;
             if (selectedDateValue)
             {
-                selectedDay = ko.utils.arrayFirst(days, function (day) { return day.date.valueOf() === selectedDateValue; });
+                selectedDay = ko.utils.arrayFirst(days, function (day) { return day.Day.valueOf() === selectedDateValue; });
             }
             if (selectedDay)
             {
@@ -106,7 +95,9 @@ $(function ()
 
     viewModel.selectedDay = ko.computed(function ()
     {
-        return ko.utils.arrayFirst(this.days(), function (day) { return day.selected(); });
+        return ko.utils.arrayFirst(this.sessionsByDay(), function (day) { 
+            return day.selected();
+        });
     }, viewModel);
 
     //viewModel.categories = ko.computed(function viewModel$categories()
@@ -157,7 +148,7 @@ $(function ()
                     return (person.FirstName.toLowerCase().indexOf(search) > -1) || (person.LastName.toLowerCase().indexOf(search) > -1);
                 });
             }
-            var dateResult = selectedDay && session.ScheduledDateTime.clone().beginningOfDay().valueOf() === selectedDay.date.valueOf();
+            var dateResult = selectedDay && session.ScheduledDateTime.clone().beginningOfDay().valueOf() === selectedDay.Day.valueOf();
 			var timeResult = this.showOld() || session.ScheduledDateTime.clone().addHours(1).isFuture();
             var favoritesResult = !this.onlyFavorites() || session.isFavorite();
             //return ((selectedCategories.indexOf(session.Category) > -1) && searchResult);
@@ -171,10 +162,10 @@ $(function ()
         if (!clickedDay.selected())
         {
             clickedDay.selected(true);
-            ko.utils.arrayForEach(this.days(),
+            ko.utils.arrayForEach(this.sessionsByDay(),
                 function (day)
                 {
-                    if (day.date.valueOf() !== clickedDay.date.valueOf())
+                    if (day.Day.valueOf() !== clickedDay.Day.valueOf())
                     {
                         day.selected(false);
                     }
@@ -233,11 +224,14 @@ $(function ()
         for (var i = 0; i < data.ScheduledSessions.length; i++)
         {
             var sessionsByDay = data.ScheduledSessions[i];
+            sessionsByDay.selected = ko.observable(false);
+            var dateString = sessionsByDay.Day.split(" ")[1];
+            sessionsByDay.Day = Date.create(dateString);
             for (var j = 0; j < sessionsByDay.TimeSlots.length; j++) {
                 var sessionsByTimeslot = sessionsByDay.TimeSlots[j];
                 for (var k = 0; k < sessionsByTimeslot.Sessions.length; k++) {
                     var session = sessionsByTimeslot.Sessions[k];
-                    var dateTimeString = sessionsByDay.Day.split(" ")[1] + " " + sessionsByTimeslot.Time;
+                    var dateTimeString = dateString + " " + sessionsByTimeslot.Time;
                     session.ScheduledDateTime = Date.create(dateTimeString);
                     session.isFavorite = ko.observable(favoriteSessionIDs && (favoriteSessionIDs.indexOf(session.Id) > -1));
                 };
@@ -271,7 +265,7 @@ $(function ()
         {
             if (newValue)
 			{
-				amplify.store("selectedDateValue", newValue.date.valueOf());
+				amplify.store("selectedDateValue", newValue.Day.valueOf());
 			}
         });
 
