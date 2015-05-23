@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+        if (window.location.protocol != "https:" && window.location.host.toLowerCase() === "thatsessions.azurewebsites.net")
+        {
+            window.location.href = "https:" + window.location.href.substring(window.location.protocol.length);
+        }
+    </script>
     <title>That Conference / Sessions</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.1/css/bootstrap.min.css" rel="stylesheet" media="screen">
