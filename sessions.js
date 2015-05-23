@@ -1,12 +1,10 @@
-//TODO: listview, offline, IE bummer, favorites, amplify caching, gravatar, google analytics
+/// <reference path="typings/lodash/lodash.d.ts"/>
+/// <reference path="typings/knockout/knockout.d.ts"/>
+/// <reference path="typings/jquery/jquery.d.ts"/>
+/// <reference path="typings/dropboxjs/dropboxjs.d.ts"/>
+/// <reference path="typings/amplifyjs/amplifyjs.d.ts"/>
 
-function jsonStringToDate(strDate)
-{
-    /// <param name="strDate" type="String"></param>
-    //Format "/Date(1364817449533)/"
-    var strDate = strDate.replace(/\/Date\(([0-9]+)\)\//, "$1");
-    return new Date(parseInt(strDate, 10));
-}
+//TODO: listview, offline, IE bummer, favorites, amplify caching, gravatar, google analytics
 
 $(function ()
 {
@@ -19,6 +17,8 @@ $(function ()
             setTimeout(function () { $(element).collapse({ toggle: false }); }, 0);
         }
     };
+    
+    var dropboxClient = new Dropbox.Client({ key: "9keh9sopjf08vhi" });
 
     var viewModel = {
         sessionsByDay: ko.observableArray([]),
@@ -27,6 +27,24 @@ $(function ()
         showMap: ko.observable(false),
 		showOld: ko.observable(false),
 		showAbout: ko.observable(false),
+        dropboxClient: ko.observable(null),
+        savingToDropbox: ko.observable(false),
+        connectDropbox: function() {
+            dropboxClient.authenticate();
+        },
+        disconnectDropbox: function() {
+            dropboxClient.signOut(function(error)
+            {
+                if (!error) 
+                {
+                    viewModel.dropboxClient(null);
+                }
+            })
+        },
+        instantOfUpdate: null,
+        favoriteSessionIDs: null,
+        selectedDay: null,
+        sessions: null,
         doNothing: function ()
         {
             //Bwahahahahaha
@@ -258,16 +276,64 @@ $(function ()
 
         viewModel.favoriteSessionIDs.subscribe(function (newValue)
         {
+            viewModel.instantOfUpdate = new Date().valueOf();
             amplify.store("favoriteSessionIDs", newValue);
+            amplify.store("instantOfUpdate", viewModel.instantOfUpdate);
+            saveToDropbox();
         });
 
         viewModel.selectedDay.subscribe(function (newValue)
         {
             if (newValue)
 			{
+                viewModel.instantOfUpdate = new Date().valueOf();
 				amplify.store("selectedDateValue", newValue.Day.valueOf());
+                amplify.store("instantOfUpdate", viewModel.instantOfUpdate);
+                saveToDropbox();
 			}
         });
 
     });
+
+    function saveToDropbox() {
+        var client = viewModel.dropboxClient();
+        if (client)
+        {
+            var data = {
+               favoriteSessionIDs: viewModel.favoriteSessionIDs(),
+               selectedDateValue: viewModel.selectedDay().Day.valueOf(),
+               instantOfUpdate: viewModel.instantOfUpdate
+            };
+            viewModel.savingToDropbox(true);
+            client.writeFile("data.json", JSON.stringify(data), function(error, stat) {
+                viewModel.savingToDropbox(false);
+            });
+        }
+    }
+    
+    dropboxClient.authenticate({ interactive: false }, function(error, client)
+    {
+        if (!error && dropboxClient.isAuthenticated())
+        {
+            viewModel.dropboxClient(dropboxClient);
+            dropboxClient.readFile("data.json", function(error, data)
+            {
+                if (!error)
+                {
+                    data = JSON.parse(data);
+                    var favoriteSessionIDs = data.favoriteSessionIDs;
+                    if (data.instantOfUpdate > viewModel.instantOfUpdate)
+                    {
+                        ko.utils.arrayForEach(viewModel.sessions(), function (session) {
+                            session.isFavorite(favoriteSessionIDs.indexOf(session.Id) > -1);
+                        });
+                        ko.utils.arrayForEach(viewModel.sessionsByDay(), function (day) {
+                            day.selected(day.Day.valueOf() === data.selectedDateValue);
+                        })
+                    }
+                } 
+            });
+        }
+    })
+    
 });
