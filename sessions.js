@@ -3,8 +3,8 @@
 /// <reference path="typings/jquery/jquery.d.ts"/>
 /// <reference path="typings/dropboxjs/dropboxjs.d.ts"/>
 /// <reference path="typings/amplifyjs/amplifyjs.d.ts"/>
-/// <reference path="typings/sugarjs/sugar.d.ts"/>
 /// <reference path="typings/bootstrap/bootstrap.d.ts"/>
+/// <reference path="typings/sugarjs/sugar.d.ts"/>
 /**
  * ThatSessionsViewModel
  */
@@ -30,6 +30,31 @@ var ThatSessionsViewModel = (function () {
             return flatSessions;
         });
         this.delayedSearch = ko.computed(this.search).extend({ throttle: 250 });
+        this.days = ko.computed(function () {
+            var days = ko.utils.arrayFilter(_this.sessionsByDay(), function (day) {
+                var Date = Date;
+                return _this.showOld() || day.Day >= Date.create("today");
+            });
+            if (days.length) {
+                var selectedDateValue = amplify.store("selectedDateValue");
+                var selectedDay;
+                if (selectedDateValue) {
+                    selectedDay = ko.utils.arrayFirst(days, function (day) { return day.Day.valueOf() === selectedDateValue; });
+                }
+                if (selectedDay) {
+                    selectedDay.selected(true);
+                }
+                else {
+                    days[0].selected(true); //Select the first day by default
+                }
+            }
+            return days;
+        });
+        this.selectedDay = ko.computed(function () {
+            return ko.utils.arrayFirst(_this.sessionsByDay(), function (day) {
+                return day.selected();
+            });
+        });
     }
     ThatSessionsViewModel.prototype.connectDropbox = function () {
         if (this.dropboxClient()) {
@@ -46,6 +71,9 @@ var ThatSessionsViewModel = (function () {
             });
         }
     };
+    ThatSessionsViewModel.prototype.toggleFn = function (observable) {
+        return function () { return observable(!observable()); };
+    };
     return ThatSessionsViewModel;
 })();
 $(function () {
@@ -60,60 +88,6 @@ $(function () {
     });
     var dropboxClient = new Dropbox.Client({ key: "9keh9sopjf08vhi" });
     var viewModel = new ThatSessionsViewModel();
-    var viewModel = {
-        sessionsByDay: ko.observableArray([]),
-        search: ko.observable(''),
-        onlyFavorites: ko.observable(false),
-        showMap: ko.observable(false),
-        showOld: ko.observable(false),
-        showAbout: ko.observable(false),
-        dropboxClient: ko.observable(null),
-        savingToDropbox: ko.observable(false),
-        connectDropbox: function () {
-            dropboxClient.authenticate();
-        },
-        disconnectDropbox: function () {
-            dropboxClient.signOut(function (error) {
-                if (!error) {
-                    viewModel.dropboxClient(null);
-                }
-            });
-        },
-        instantOfUpdate: null,
-        favoriteSessionIDs: null,
-        selectedDay: null,
-        sessions: null,
-        toggleFn: function (observable) {
-            return function () { return observable(!observable()); };
-        },
-        doNothing: function () {
-            //Bwahahahahaha
-        }
-    };
-    viewModel.days = ko.computed(function viewModel$days() {
-        var days = ko.utils.arrayFilter(this.sessionsByDay(), function (day) {
-            return this.showOld() || day.Day >= Date.create("today");
-        }.bind(this));
-        if (days.length) {
-            var selectedDateValue = amplify.store("selectedDateValue");
-            var selectedDay;
-            if (selectedDateValue) {
-                selectedDay = ko.utils.arrayFirst(days, function (day) { return day.Day.valueOf() === selectedDateValue; });
-            }
-            if (selectedDay) {
-                selectedDay.selected(true);
-            }
-            else {
-                days[0].selected(true); //Select the first day by default
-            }
-        }
-        return days;
-    }, viewModel);
-    viewModel.selectedDay = ko.computed(function () {
-        return ko.utils.arrayFirst(this.sessionsByDay(), function (day) {
-            return day.selected();
-        });
-    }, viewModel);
     //viewModel.categories = ko.computed(function viewModel$categories()
     //{
     //    var categories = [];

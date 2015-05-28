@@ -3,14 +3,15 @@
 /// <reference path="typings/jquery/jquery.d.ts"/>
 /// <reference path="typings/dropboxjs/dropboxjs.d.ts"/>
 /// <reference path="typings/amplifyjs/amplifyjs.d.ts"/>
-/// <reference path="typings/sugarjs/sugar.d.ts"/>
 /// <reference path="typings/bootstrap/bootstrap.d.ts"/>
+/// <reference path="typings/sugarjs/sugar.d.ts"/>
 
 //TODO: listview, offline, IE bummer, favorites, amplify caching, gravatar, google analytics
 
 interface ThatDay {
-    Day: string;
+    Day: Date;
     TimeSlots: ThatTimeslot[];
+    selected: KnockoutObservable<boolean>;
 }
 
 interface ThatTimeslot {
@@ -40,28 +41,28 @@ interface ThatSession {
 }
 
 interface ThatSpeaker {
-        Biography: string;
-        Company: string;
-        Facebook: string;
-        FirstName: string;
-        GitHub: string;
-        GooglePlus: string;
-        HeadShot: string;
-        LastName: string;
-        LastUpdated: string;
-        LinkedIn: string;
-        Title: string;
-        Twitter: string;
-        UserName: string;
-        WebSite: string;
+    Biography: string;
+    Company: string;
+    Facebook: string;
+    FirstName: string;
+    GitHub: string;
+    GooglePlus: string;
+    HeadShot: string;
+    LastName: string;
+    LastUpdated: string;
+    LinkedIn: string;
+    Title: string;
+    Twitter: string;
+    UserName: string;
+    WebSite: string;
 }
 
 /**
  * ThatSessionsViewModel
  */
 class ThatSessionsViewModel {
-        
     sessionsByDay : KnockoutObservableArray<ThatDay>;
+    days : KnockoutComputed<ThatDay[]>;
     search : KnockoutObservable<string>;
     onlyFavorites : KnockoutObservable<boolean>;
     showMap : KnockoutObservable<boolean>;
@@ -74,6 +75,7 @@ class ThatSessionsViewModel {
     delayedSearch : KnockoutComputed<string>;
     sessions : KnockoutComputed<ThatSession[]>;
     favoriteSessionIDs : KnockoutComputed<Array<number>>;
+    selectedDay : KnockoutComputed<ThatDay>;
     
     constructor() {
         this.sessionsByDay = ko.observableArray([]);
@@ -99,7 +101,39 @@ class ThatSessionsViewModel {
         });
         
         this.delayedSearch = ko.computed<string>(this.search).extend({ throttle: 250 });
-
+        
+        this.days = ko.computed(() =>
+        {
+            var days = ko.utils.arrayFilter(this.sessionsByDay(), (day) =>
+            {
+                return this.showOld() || day.Day >= Date.create("today");
+            });
+            if (days.length)
+            {
+                var selectedDateValue = amplify.store("selectedDateValue");
+                var selectedDay;
+                if (selectedDateValue)
+                {
+                    selectedDay = ko.utils.arrayFirst(days, function (day) { return day.Day.valueOf() === selectedDateValue; });
+                }
+                if (selectedDay)
+                {
+                    selectedDay.selected(true);
+                }
+                else
+                {
+                    days[0].selected(true); //Select the first day by default
+                }
+            }
+            return days;
+        });
+        
+        this.selectedDay = ko.computed(() =>
+        {
+            return ko.utils.arrayFirst(this.sessionsByDay(), function (day) { 
+                return day.selected();
+            });
+        });
     }
     
     connectDropbox() {
@@ -117,6 +151,14 @@ class ThatSessionsViewModel {
                 }
             })
         }
+    }
+    
+    toggleFn(observable : KnockoutObservable<any>) {
+        return () => observable(!observable());
+    }
+    
+    doNothing: () => {
+        //Bwahahahahaha
     }
 }
 
@@ -137,77 +179,6 @@ $(function ()
     var dropboxClient = new Dropbox.Client({ key: "9keh9sopjf08vhi" });
     
     var viewModel = new ThatSessionsViewModel();
-
-    var viewModel = {
-        sessionsByDay: ko.observableArray([]),
-        search: ko.observable(''),
-        onlyFavorites: ko.observable(false),
-        showMap: ko.observable(false),
-		showOld: ko.observable(false),
-		showAbout: ko.observable(false),
-        dropboxClient: ko.observable(null),
-        savingToDropbox: ko.observable(false),
-        connectDropbox: function() {
-            dropboxClient.authenticate();
-        },
-        disconnectDropbox: function() {
-            dropboxClient.signOut(function(error)
-            {
-                if (!error) 
-                {
-                    viewModel.dropboxClient(null);
-                }
-            })
-        },
-        instantOfUpdate: null,
-        favoriteSessionIDs: null,
-        selectedDay: null,
-        sessions: null,
-        toggleFn: function(observable : KnockoutObservable<any>) {
-            return () => observable(!observable());
-        },
-        doNothing: function ()
-        {
-            //Bwahahahahaha
-        }
-    };
-	
-    
-
-
-    viewModel.days = ko.computed(function viewModel$days()
-    {
-        var days = ko.utils.arrayFilter(this.sessionsByDay(),
-            function (day)
-            {
-                return this.showOld() || day.Day >= Date.create("today");
-            }.bind(this));
-        if (days.length)
-        {
-            var selectedDateValue = amplify.store("selectedDateValue");
-            var selectedDay;
-            if (selectedDateValue)
-            {
-                selectedDay = ko.utils.arrayFirst(days, function (day) { return day.Day.valueOf() === selectedDateValue; });
-            }
-            if (selectedDay)
-            {
-                selectedDay.selected(true);
-            }
-            else
-            {
-                days[0].selected(true); //Select the first day by default
-            }
-        }
-        return days;
-    }, viewModel);
-
-    viewModel.selectedDay = ko.computed(function ()
-    {
-        return ko.utils.arrayFirst(this.sessionsByDay(), function (day) { 
-            return day.selected();
-        });
-    }, viewModel);
 
     //viewModel.categories = ko.computed(function viewModel$categories()
     //{
