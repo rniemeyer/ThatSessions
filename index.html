@@ -54,15 +54,15 @@
     <div class="container">
         <div class="row">
             <div class="btn-group" style="margin-top: 3px; margin-bottom: 3px;">
-                <button class="btn btn-small" data-bind="css: { 'btn-inverse': onlyFavorites }, click: toggleOnlyFavorites" title="Show only favorites">
+                <button class="btn btn-small" data-bind="css: { 'btn-inverse': onlyFavorites }, click: toggleFn(onlyFavorites)" title="Show only favorites">
                     <i class="icon-star" data-bind="css: { 'icon-white': onlyFavorites }"></i>
                     <span class="visible-tablet visible-desktop">only</span>
                 </button>
-                <button class="btn btn-small" data-bind="css: { 'btn-inverse': showMap }, click: toggleMap" title="Show conference center map">
+                <button class="btn btn-small" data-bind="css: { 'btn-inverse': showMap }, click: toggleFn(showMap)" title="Show conference center map">
                     <i class="icon-picture" data-bind="css: { 'icon-white': showMap }"></i>
                     <span class="visible-tablet visible-desktop">Show map</span>
                 </button>
-				<button class="btn btn-small" data-bind="css: { 'btn-inverse': showOld }, click: toggleShowOld" title="Show old sessions">
+				<button class="btn btn-small" data-bind="css: { 'btn-inverse': showOld }, click: toggleFn(showOld)" title="Show old sessions">
                     <i class="icon-time" data-bind="css: { 'icon-white': showOld }"></i>
                     <span class="visible-tablet visible-desktop">Show old</span>
                 </button>
@@ -75,7 +75,7 @@
                 </button>
             </div>
             <div class="btn-group" style="margin-top: 3px; margin-bottom: 3px;">
-    			<button class="btn btn-small" data-bind="css: { 'btn-inverse': showAbout }, click: toggleShowAbout" title="About this page">
+    			<button class="btn btn-small" data-bind="css: { 'btn-inverse': showAbout }, click: toggle(showAbout)" title="About this page">
     				<i class="icon-question-sign" data-bind="css: { 'icon-white': showAbout }"></i>
     				<span class="visible-tablet visible-desktop">About</span>
     			</button>
@@ -103,7 +103,7 @@
         <div class="row">
             <div class="well well-small">
                 <!--<h5>-->
-                    <button class="btn btn-mini" data-bind="css: { 'btn-inverse': isFavorite }, click: $root.toggleFavorite" title="Favorite?">
+                    <button class="btn btn-mini" data-bind="css: { 'btn-inverse': isFavorite }, click: $root.toggleFn(isFavorite)" title="Favorite?">
                         <i class="icon-star" data-bind="css: { 'icon-white': isFavorite }"></i>
                     </button>
                     <span class="label label-info" data-bind="text: ScheduledDateTime.format('{h}:{mm} {tt}') + ' | ' + ScheduledRoom">
