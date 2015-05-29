@@ -1,8 +1,8 @@
-/// <reference path="typings/lodash/lodash.d.ts"/>
-/// <reference path="typings/knockout/knockout.d.ts"/>
-/// <reference path="typings/jquery/jquery.d.ts"/>
-/// <reference path="typings/dropboxjs/dropboxjs.d.ts"/>
-/// <reference path="typings/amplifyjs/amplifyjs.d.ts"/>
+/// <reference path="../typings/lodash/lodash.d.ts" />
+/// <reference path="../typings/knockout/knockout.d.ts"/>
+/// <reference path="../typings/jquery/jquery.d.ts"/>
+/// <reference path="../typings/dropboxjs/dropboxjs.d.ts"/>
+/// <reference path="../typings/amplifyjs/amplifyjs.d.ts"/>
 
 //TODO: listview, offline, IE bummer, favorites, amplify caching, gravatar, google analytics
 
@@ -193,7 +193,7 @@ $(function ()
 
     ko.applyBindings(viewModel);
 
-    amplify.request.define("sessions", "ajax", { url: "https://www.thatconference.com/api3/Session/GetAcceptedSessionsByTimeslot" });
+    amplify.request.define("sessions", "ajax", { url: "/getSessions", type: "POST" });
     
     amplify.request("sessions", function (data)
     {

@@ -1,0 +1,21 @@
+{
+  "name": "ThatSessions",
+  "version": "0.1.0",
+  "description": "",
+  "main": "app.js",
+  "dependencies": {
+    "express": "^4.12.4",
+    "request": "^2.56.0"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://mheggeseth@github.com/mheggeseth/ThatSessions.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mheggeseth/ThatSessions/issues"
+  },
+  "homepage": "https://github.com/mheggeseth/ThatSessions"
+}
