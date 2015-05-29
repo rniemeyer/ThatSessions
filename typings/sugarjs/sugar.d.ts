@@ -4080,7 +4080,7 @@ interface Locale {
 	timeParse: string[];
 }
 
-interface DateStatic {
+interface DateConstructor {
 
 	/**
 	* Adds a locale <set> to the locales understood by Sugar.
