@@ -1,3 +1,4 @@
+<<<<<<< HEAD:sessions.js
 /// <reference path="typings/lodash/lodash.d.ts"/>
 /// <reference path="typings/knockout/knockout.d.ts"/>
 /// <reference path="typings/jquery/jquery.d.ts"/>
@@ -59,6 +60,25 @@ var ThatSessionsViewModel = (function () {
     ThatSessionsViewModel.prototype.connectDropbox = function () {
         if (this.dropboxClient()) {
             this.dropboxClient().authenticate();
+=======
+/// <reference path="../typings/lodash/lodash.d.ts" />
+/// <reference path="../typings/knockout/knockout.d.ts"/>
+/// <reference path="../typings/jquery/jquery.d.ts"/>
+/// <reference path="../typings/dropboxjs/dropboxjs.d.ts"/>
+/// <reference path="../typings/amplifyjs/amplifyjs.d.ts"/>
+
+//TODO: listview, offline, IE bummer, favorites, amplify caching, gravatar, google analytics
+
+$(function ()
+{
+    $(".about a").attr("target", "_blank");
+	
+	ko.bindingHandlers.collapse = {
+        init: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext)
+        {
+            $(element).attr({ "data-toggle": "collapse", "data-target": valueAccessor() });
+            setTimeout(function () { $(element).collapse({ toggle: false }); }, 0);
+>>>>>>> master:public/sessions.js
         }
     };
     ThatSessionsViewModel.prototype.disconnectDropbox = function () {
@@ -148,8 +168,16 @@ $(function () {
         }
     }.bind(viewModel);
     ko.applyBindings(viewModel);
+<<<<<<< HEAD:sessions.js
     amplify.request.define("sessions", "ajax", { url: "https://www.thatconference.com/api3/Session/GetAcceptedSessionsByTimeslot" });
     amplify.request("sessions", function (data) {
+=======
+
+    amplify.request.define("sessions", "ajax", { url: "/getSessions", type: "POST" });
+    
+    amplify.request("sessions", function (data)
+    {
+>>>>>>> master:public/sessions.js
         //data.ScheduledSessions[]
         // Day = "Sat 8/9"
         // TimeSlots[]
