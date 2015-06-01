@@ -90,15 +90,17 @@ var ThatSessionsViewModel = (function () {
     ThatSessionsViewModel.prototype.toggle = function (observable) {
         return function () { return observable(!observable()); };
     };
-    ThatSessionsViewModel.prototype.toggleSelected = function (clickedDay) {
-        if (!clickedDay.selected()) {
-            clickedDay.selected(true);
-            ko.utils.arrayForEach(this.sessionsByDay(), function (day) {
-                if (day.Day.valueOf() !== clickedDay.Day.valueOf()) {
-                    day.selected(false);
-                }
-            });
-        }
+    ThatSessionsViewModel.prototype.selectDay = function ($root) {
+        return function (clickedDay) {
+            if (!clickedDay.selected()) {
+                clickedDay.selected(true);
+                ko.utils.arrayForEach($root.sessionsByDay(), function (day) {
+                    if (day.Day.valueOf() !== clickedDay.Day.valueOf()) {
+                        day.selected(false);
+                    }
+                });
+            }
+        };
     };
     ThatSessionsViewModel.prototype.doNothing = function () {
         //Bwahahahahaha
@@ -208,9 +210,7 @@ $(function () {
         }
         ;
         viewModel.sessionsByDay(data.ScheduledSessions);
-        var futureSessions = ko.utils.arrayFilter(viewModel.sessions(), function (session) {
-            return session.ScheduledDateTime.clone().addHours(1).isFuture();
-        });
+        var futureSessions = ko.utils.arrayFilter(viewModel.sessions(), function (session) { return session.ScheduledDateTime.clone().addHours(1).isFuture(); });
         if (!futureSessions.length) {
             viewModel.showOld(true);
         }

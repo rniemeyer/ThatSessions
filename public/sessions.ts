@@ -149,14 +149,16 @@ class ThatSessionsViewModel {
         return () => observable(!observable());
     }
 
-    toggleSelected(clickedDay: ThatDay) {
-        if (!clickedDay.selected()) {
-            clickedDay.selected(true);
-            ko.utils.arrayForEach(this.sessionsByDay(), (day) => {
-                if (day.Day.valueOf() !== clickedDay.Day.valueOf()) {
-                    day.selected(false);
-                }
-            });
+    selectDay($root: ThatSessionsViewModel) {
+        return (clickedDay: ThatDay) => {
+            if (!clickedDay.selected()) {
+                clickedDay.selected(true);
+                ko.utils.arrayForEach($root.sessionsByDay(), (day) => {
+                    if (day.Day.valueOf() !== clickedDay.Day.valueOf()) {
+                        day.selected(false);
+                    }
+                });
+            }
         }
     }
 
@@ -277,13 +279,10 @@ $(function() {
 
         viewModel.sessionsByDay(data.ScheduledSessions);
 
-        var futureSessions = ko.utils.arrayFilter(viewModel.sessions(), function(session) {
-            return session.ScheduledDateTime.clone().addHours(1).isFuture();
-        });
+        var futureSessions = ko.utils.arrayFilter(viewModel.sessions(), (session) => session.ScheduledDateTime.clone().addHours(1).isFuture());
         if (!futureSessions.length) {
             viewModel.showOld(true);
         }
-
 
         viewModel.favoriteSessionIDs.subscribe(function(newValue) {
             viewModel.instantOfUpdate = new Date().valueOf();

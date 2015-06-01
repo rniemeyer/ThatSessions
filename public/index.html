@@ -68,7 +68,7 @@
                 </button>
             </div>
 			<div class="btn-group" data-bind="foreach: days" style="margin-top: 3px; margin-bottom: 3px;">
-                <button class="btn btn-small" data-bind="css: { 'btn-inverse': selected }, click: $root.toggleSelected">
+                <button class="btn btn-small" data-bind="css: { 'btn-inverse': selected }, click: $root.selectDay($root)">
                     <!--<span class="badge badge-info" style="margin-right: 5px" data-bind="text: count"></span>-->
                     <span class="visible-tablet visible-desktop" data-bind="text: Day.format('{Weekday}')"></span>
                     <span class="visible-phone" data-bind="text: Day.format('{Dow}')"></span>
