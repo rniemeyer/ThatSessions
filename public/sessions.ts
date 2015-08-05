@@ -55,11 +55,6 @@ interface ThatSpeaker {
     WebSite: string;
 }
 
-interface DropboxModel {
-    favoriteSessionIDs: number[];
-    instantOfUpdate: number;
-}
-
 class ThatSessionsViewModel {
     sessionsByDay: KnockoutObservableArray<ThatDay> = ko.observableArray([]);
     showOld = ko.observable(false);
@@ -69,6 +64,7 @@ class ThatSessionsViewModel {
     showMap = ko.observable(false);
     showAbout = ko.observable(false);
     dropboxClient: KnockoutObservable<Dropbox.Client> = ko.observable(new Dropbox.Client({ key: "9keh9sopjf08vhi" }));
+    dropboxAuthenticated = ko.observable(false);
     savingToDropbox = ko.observable(false);
 
     //Computeds
@@ -123,15 +119,21 @@ class ThatSessionsViewModel {
     });
     
     constructor() {
-        this.dropboxClient().authenticate({ interactive: false });
+        this.dropboxClient().authenticate({ interactive: false }, (err, client : Dropbox.Client) => {
+            this.dropboxAuthenticated(client.isAuthenticated());
+        });
     }
 
     connectDropbox() {
-        this.dropboxClient().authenticate();
+        this.dropboxClient().authenticate((err, client : Dropbox.Client) => {
+            this.dropboxAuthenticated(client.isAuthenticated());
+        });
     }
 
     disconnectDropbox() {
-        this.dropboxClient().signOut((err) => { }); //There's really nothing to do after signing out
+        this.dropboxClient().signOut((err) => { 
+            this.dropboxAuthenticated(false);
+        });
     }
 
     //Returns a function that toggles the provided observable
@@ -208,35 +210,29 @@ $(function() {
     });
 
     function getFavorites(callback: (favoriteSessionIDs: number[]) => void) {
-        var dflt = { instantOfUpdate: 0, favoriteSessionIDs: [] };
-        var local: DropboxModel = amplify.store("favorites") || dflt;
+        var local: number[] = amplify.store("favorites") || [];
         var client = viewModel.dropboxClient();
         if (client && client.isAuthenticated()) {
             client.readFile("data.json", (error: Dropbox.ApiError, fileContents: string) => {
-                var dropbox: DropboxModel = (fileContents && JSON.parse(fileContents)) || dflt;
-                if (dropbox.instantOfUpdate >= local.instantOfUpdate) {
-                    callback(dropbox.favoriteSessionIDs);
+                if (!error) {
+                    callback((fileContents && JSON.parse(fileContents)) || []);
                 }
                 else {
-                    callback(local.favoriteSessionIDs);
+                    callback(local);
                 }
             });
         }
         else {
-            callback(local.favoriteSessionIDs);
+            callback(local);
         }
     }
 
     function saveFavorites(favorites: number[]): void {
-        var data: DropboxModel = {
-            favoriteSessionIDs: favorites,
-            instantOfUpdate: new Date().valueOf()
-        };
-        amplify.store("favorites", data);
+        amplify.store("favorites", favorites);
         var dropboxClient = viewModel.dropboxClient();
         if (dropboxClient && dropboxClient.isAuthenticated()) {
             viewModel.savingToDropbox(true);
-            dropboxClient.writeFile("data.json", JSON.stringify(data), (error, stat) => {
+            dropboxClient.writeFile("data.json", JSON.stringify(favorites), (error, stat) => {
                 viewModel.savingToDropbox(false);
             });
         }

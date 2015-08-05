@@ -16,6 +16,7 @@ var ThatSessionsViewModel = (function () {
         this.showMap = ko.observable(false);
         this.showAbout = ko.observable(false);
         this.dropboxClient = ko.observable(new Dropbox.Client({ key: "9keh9sopjf08vhi" }));
+        this.dropboxAuthenticated = ko.observable(false);
         this.savingToDropbox = ko.observable(false);
         //Computeds
         this.days = ko.computed(function () {
@@ -67,13 +68,21 @@ var ThatSessionsViewModel = (function () {
             });
             return selectedSessions.sortBy(function (session) { return session.ScheduledDateTime.valueOf() + parseInt(session.Level, 10); });
         });
-        this.dropboxClient().authenticate({ interactive: false });
+        this.dropboxClient().authenticate({ interactive: false }, function (err, client) {
+            _this.dropboxAuthenticated(client.isAuthenticated());
+        });
     }
     ThatSessionsViewModel.prototype.connectDropbox = function () {
-        this.dropboxClient().authenticate();
+        var _this = this;
+        this.dropboxClient().authenticate(function (err, client) {
+            _this.dropboxAuthenticated(client.isAuthenticated());
+        });
     };
     ThatSessionsViewModel.prototype.disconnectDropbox = function () {
-        this.dropboxClient().signOut(function (err) { }); //There's really nothing to do after signing out
+        var _this = this;
+        this.dropboxClient().signOut(function (err) {
+            _this.dropboxAuthenticated(false);
+        });
     };
     //Returns a function that toggles the provided observable
     ThatSessionsViewModel.prototype.toggle = function (observable) {
@@ -143,34 +152,28 @@ $(function () {
         });
     });
     function getFavorites(callback) {
-        var dflt = { instantOfUpdate: 0, favoriteSessionIDs: [] };
-        var local = amplify.store("favorites") || dflt;
+        var local = amplify.store("favorites") || [];
         var client = viewModel.dropboxClient();
         if (client && client.isAuthenticated()) {
             client.readFile("data.json", function (error, fileContents) {
-                var dropbox = (fileContents && JSON.parse(fileContents)) || dflt;
-                if (dropbox.instantOfUpdate >= local.instantOfUpdate) {
-                    callback(dropbox.favoriteSessionIDs);
+                if (!error) {
+                    callback((fileContents && JSON.parse(fileContents)) || []);
                 }
                 else {
-                    callback(local.favoriteSessionIDs);
+                    callback(local);
                 }
             });
         }
         else {
-            callback(local.favoriteSessionIDs);
+            callback(local);
         }
     }
     function saveFavorites(favorites) {
-        var data = {
-            favoriteSessionIDs: favorites,
-            instantOfUpdate: new Date().valueOf()
-        };
-        amplify.store("favorites", data);
+        amplify.store("favorites", favorites);
         var dropboxClient = viewModel.dropboxClient();
         if (dropboxClient && dropboxClient.isAuthenticated()) {
             viewModel.savingToDropbox(true);
-            dropboxClient.writeFile("data.json", JSON.stringify(data), function (error, stat) {
+            dropboxClient.writeFile("data.json", JSON.stringify(favorites), function (error, stat) {
                 viewModel.savingToDropbox(false);
             });
         }
