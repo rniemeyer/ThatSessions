@@ -15,7 +15,7 @@ var ThatSessionsViewModel = (function () {
         this.onlyFavorites = ko.observable(false);
         this.showMap = ko.observable(false);
         this.showAbout = ko.observable(false);
-        this.dropboxClient = ko.observable(null);
+        this.dropboxClient = ko.observable(new Dropbox.Client({ key: "9keh9sopjf08vhi" }));
         this.savingToDropbox = ko.observable(false);
         //Computeds
         this.days = ko.computed(function () {
@@ -67,21 +67,18 @@ var ThatSessionsViewModel = (function () {
             });
             return selectedSessions.sortBy(function (session) { return session.ScheduledDateTime.valueOf() + parseInt(session.Level, 10); });
         });
+        this.dropboxClient().authenticate({ interactive: false });
     }
     ThatSessionsViewModel.prototype.connectDropbox = function () {
-        if (this.dropboxClient()) {
-            this.dropboxClient().authenticate();
-        }
+        this.dropboxClient().authenticate();
     };
     ThatSessionsViewModel.prototype.disconnectDropbox = function () {
         var _this = this;
-        if (this.dropboxClient()) {
-            this.dropboxClient().signOut(function (err) {
-                if (!err) {
-                    _this.dropboxClient(null);
-                }
-            });
-        }
+        this.dropboxClient().signOut(function (err) {
+            if (!err) {
+                _this.dropboxClient(null);
+            }
+        });
     };
     //Returns a function that toggles the provided observable
     ThatSessionsViewModel.prototype.toggle = function (observable) {
@@ -116,12 +113,6 @@ $(function () {
     });
     var viewModel = new ThatSessionsViewModel();
     ko.applyBindings(viewModel);
-    var dropboxClient = new Dropbox.Client({ key: "9keh9sopjf08vhi" });
-    dropboxClient.authenticate({ interactive: false }, function (error, client) {
-        if (!error && client.isAuthenticated()) {
-            viewModel.dropboxClient(client);
-        }
-    });
     amplify.request.define("sessions", "ajax", { url: "/getSessions", type: "POST" });
     amplify.request("sessions", function (data) {
         for (var i = 0; i < data.ScheduledSessions.length; i++) {
@@ -157,36 +148,33 @@ $(function () {
         });
     });
     function getFavorites(callback) {
-        var cookies = {
-            favoriteSessionIDs: amplify.store("favoriteSettinIDs"),
-            instantOfUpdate: amplify.store("instantOfUpdate")
-        };
+        var local = amplify.store("favorites") || {};
         var client = viewModel.dropboxClient();
         if (client && client.isAuthenticated()) {
             client.readFile("data.json", function (error, fileContents) {
-                var dropbox = JSON.parse(fileContents);
-                if (dropbox.instantOfUpdate > cookies.instantOfUpdate) {
+                var dropbox = fileContents && JSON.parse(fileContents);
+                if ((dropbox && dropbox.instantOfUpdate) > local.instantOfUpdate) {
                     callback(dropbox.favoriteSessionIDs);
                 }
                 else {
-                    callback(cookies.favoriteSessionIDs);
+                    callback(local.favoriteSessionIDs);
                 }
             });
         }
         else {
-            callback(cookies.favoriteSessionIDs);
+            callback(local.favoriteSessionIDs);
         }
     }
     function saveFavorites(favorites) {
         var data = {
-            instantOfUpdate: new Date().valueOf(),
-            favoriteSessionIDs: favorites
+            favoriteSessionIDs: favorites,
+            instantOfUpdate: new Date().valueOf()
         };
-        amplify.store("favoriteSessionIDs", data.favoriteSessionIDs);
-        amplify.store("instantOfUpdate", data.instantOfUpdate);
-        if (viewModel.dropboxClient()) {
+        amplify.store("favorites", data);
+        var dropboxClient = viewModel.dropboxClient();
+        if (dropboxClient && dropboxClient.isAuthenticated()) {
             viewModel.savingToDropbox(true);
-            viewModel.dropboxClient().writeFile("data.json", JSON.stringify(data), function (error, stat) {
+            dropboxClient.writeFile("data.json", JSON.stringify(data), function (error, stat) {
                 viewModel.savingToDropbox(false);
             });
         }

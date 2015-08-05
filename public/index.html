@@ -36,13 +36,13 @@
             <a class="brand visible-phone" href="#">That / Sessions</a>
 			<a class="brand visible-tablet visible-desktop" href="#">That Conference / Sessions</a>
             <div class="btn-group">
-                <a class="btn dropdown-toggle" data-toggle="dropdown" href="#" data-bind="css: { 'btn-success': dropboxClient, 'btn-info': !dropboxClient() }">
+                <a class="btn dropdown-toggle" data-toggle="dropdown" href="#" data-bind="css: { 'btn-success': dropboxClient().isAuthenticated(), 'btn-info': !dropboxClient().isAuthenticated() }">
                     <i class="fa fa-dropbox"></i>
                     <i class="fa" data-bind="css: { 'fa-spin': savingToDropbox, 'fa-refresh': savingToDropbox, 'fa-caret-down': !savingToDropbox() }"></i>
                 </a>
                 <ul class="dropdown-menu">
-                    <li><a href="#" data-bind="{ click: disconnectDropbox, visible: dropboxClient }">Log out</a></li>
-                    <li><a href="#" data-bind="{ click: connectDropbox, visible: !dropboxClient() }">Log in</a></li>
+                    <li><a href="#" data-bind="{ click: disconnectDropbox, visible: dropboxClient().isAuthenticated() }">Log out</a></li>
+                    <li><a href="#" data-bind="{ click: connectDropbox, visible: !dropboxClient().isAuthenticated() }">Log in</a></li>
                 </ul>
             </div>
             <form class="navbar-search pull-right" data-bind="submit: doNothing">

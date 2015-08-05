@@ -68,7 +68,7 @@ class ThatSessionsViewModel {
     onlyFavorites = ko.observable(false);
     showMap = ko.observable(false);
     showAbout = ko.observable(false);
-    dropboxClient: KnockoutObservable<Dropbox.Client> = ko.observable(null);
+    dropboxClient: KnockoutObservable<Dropbox.Client> = ko.observable(new Dropbox.Client({ key: "9keh9sopjf08vhi" }));
     savingToDropbox = ko.observable(false);
 
     //Computeds
@@ -121,21 +121,21 @@ class ThatSessionsViewModel {
         });
         return selectedSessions.sortBy((session) => session.ScheduledDateTime.valueOf() + parseInt(session.Level, 10));
     });
+    
+    constructor() {
+        this.dropboxClient().authenticate({ interactive: false });
+    }
 
     connectDropbox() {
-        if (this.dropboxClient()) {
-            this.dropboxClient().authenticate();
-        }
+        this.dropboxClient().authenticate();
     }
 
     disconnectDropbox() {
-        if (this.dropboxClient()) {
-            this.dropboxClient().signOut((err) => {
-                if (!err) {
-                    this.dropboxClient(null);
-                }
-            })
-        }
+        this.dropboxClient().signOut((err) => {
+            if (!err) {
+                this.dropboxClient(null);
+            }
+        });
     }
 
     //Returns a function that toggles the provided observable
@@ -175,14 +175,7 @@ $(function() {
 
     var viewModel = new ThatSessionsViewModel();
     ko.applyBindings(viewModel);
-
-    var dropboxClient = new Dropbox.Client({ key: "9keh9sopjf08vhi" });
-    dropboxClient.authenticate({ interactive: false }, function(error, client: Dropbox.Client) {
-        if (!error && client.isAuthenticated()) {
-            viewModel.dropboxClient(client);
-        }
-    });
-
+    
     amplify.request.define("sessions", "ajax", { url: "/getSessions", type: "POST" });
     amplify.request("sessions", function(data) {
         for (var i = 0; i < data.ScheduledSessions.length; i++) {
@@ -219,37 +212,34 @@ $(function() {
     });
 
     function getFavorites(callback: (favoriteSessionIDs: number[]) => void) {
-        var cookies: DropboxModel = {
-            favoriteSessionIDs: amplify.store("favoriteSettinIDs"),
-            instantOfUpdate: amplify.store("instantOfUpdate")
-        };
+        var local: DropboxModel = amplify.store("favorites") || {};
         var client = viewModel.dropboxClient();
         if (client && client.isAuthenticated()) {
             client.readFile("data.json", (error: Dropbox.ApiError, fileContents: string) => {
-                var dropbox: DropboxModel = JSON.parse(fileContents);
-                if (dropbox.instantOfUpdate > cookies.instantOfUpdate) {
+                var dropbox: DropboxModel = fileContents && JSON.parse(fileContents);
+                if ((dropbox && dropbox.instantOfUpdate) > local.instantOfUpdate) {
                     callback(dropbox.favoriteSessionIDs);
                 }
                 else {
-                    callback(cookies.favoriteSessionIDs);
+                    callback(local.favoriteSessionIDs);
                 }
             });
         }
         else {
-            callback(cookies.favoriteSessionIDs);
+            callback(local.favoriteSessionIDs);
         }
     }
 
     function saveFavorites(favorites: number[]): void {
         var data: DropboxModel = {
-            instantOfUpdate: new Date().valueOf(),
-            favoriteSessionIDs: favorites
+            favoriteSessionIDs: favorites,
+            instantOfUpdate: new Date().valueOf()
         };
-        amplify.store("favoriteSessionIDs", data.favoriteSessionIDs);
-        amplify.store("instantOfUpdate", data.instantOfUpdate);
-        if (viewModel.dropboxClient()) {
+        amplify.store("favorites", data);
+        var dropboxClient = viewModel.dropboxClient();
+        if (dropboxClient && dropboxClient.isAuthenticated()) {
             viewModel.savingToDropbox(true);
-            viewModel.dropboxClient().writeFile("data.json", JSON.stringify(data), (error, stat) => {
+            dropboxClient.writeFile("data.json", JSON.stringify(data), (error, stat) => {
                 viewModel.savingToDropbox(false);
             });
         }
