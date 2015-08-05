@@ -6,8 +6,6 @@
 /// <reference path="../typings/bootstrap/bootstrap.d.ts"/>
 /// <reference path="../typings/sugarjs/sugar.d.ts"/>
 
-//TODO: listview, offline, IE bummer, favorites, amplify caching, gravatar, google analytics
-
 interface ThatDay {
     Day: Date;
     TimeSlots: ThatTimeslot[];
@@ -62,9 +60,6 @@ interface DropboxModel {
     instantOfUpdate: number;
 }
 
-/**
- * ThatSessionsViewModel
- */
 class ThatSessionsViewModel {
     sessionsByDay: KnockoutObservableArray<ThatDay> = ko.observableArray([]);
     showOld = ko.observable(false);
@@ -75,7 +70,6 @@ class ThatSessionsViewModel {
     showAbout = ko.observable(false);
     dropboxClient: KnockoutObservable<Dropbox.Client> = ko.observable(null);
     savingToDropbox = ko.observable(false);
-    instantOfUpdate: number;
 
     //Computeds
     days = ko.computed(() => {
@@ -179,88 +173,18 @@ $(function() {
         }
     });
 
-    var dropboxClient = new Dropbox.Client({ key: "9keh9sopjf08vhi" });
-
     var viewModel = new ThatSessionsViewModel();
-
-    //viewModel.categories = ko.computed(function viewModel$categories()
-    //{
-    //    var categories = [];
-    //    ko.utils.arrayForEach(this.sessions(), function (session)
-    //    {
-    //        var category = ko.utils.arrayFirst(categories, function (cat) { return cat.name === session.Category });
-    //        if (!category)
-    //        {
-    //            categories.push({ name: session.Category, count: 1, selected: ko.observable(true) });
-    //        }
-    //        else
-    //        {
-    //            category.count++;
-    //        }
-    //    });
-    //    return categories;
-    //}, viewModel);
-
-    //viewModel.selectedCategories = ko.computed(function viewModel$selectedCategories()
-    //{
-    //    return ko.utils.arrayFilter(this.categories(), function (category)
-    //    {
-    //        return category.selected();
-    //    });
-    //}, viewModel);
-
-    //viewModel.allCategoriesSelected = ko.computed(function ()
-    //{
-    //    return !ko.utils.arrayFirst(this.categories(), function (category) { return !category.selected(); });
-    //}, viewModel);
-
     ko.applyBindings(viewModel);
 
+    var dropboxClient = new Dropbox.Client({ key: "9keh9sopjf08vhi" });
+    dropboxClient.authenticate({ interactive: false }, function(error, client: Dropbox.Client) {
+        if (!error && client.isAuthenticated()) {
+            viewModel.dropboxClient(client);
+        }
+    });
+
     amplify.request.define("sessions", "ajax", { url: "/getSessions", type: "POST" });
-
     amplify.request("sessions", function(data) {
-        //data.ScheduledSessions[]
-        // Day = "Sat 8/9"
-        // TimeSlots[]
-        // Time = "8:30 AM"
-        // Sessions[]
-        // Accepted: true
-        // Canceled: false
-        // Category: "That Conference"
-        // Description: "On August 9th and 10th, That Conference will host the 2014 Midwest GiveCamp. This year, Midwest Midwest GiveCamp and That Conference will team up with the Humanitarian Toolbox in a quest to help build software in support of disaster relief. This is a free event for all paid attendees and food will be provided."
-        // Id: 5468
-        // IsFamilyApproved: false
-        // IsUserFavorite: null
-        // LastUpdated: "2014-08-08T11:26:21.693"
-        // Level: "100"
-        // ScheduledDateTime: Sat Aug 09 2014 08:30:00 GMT-0500 (Central Daylight Time)
-        // ScheduledRoom: "Cypress"
-        // SessionLinks: Array[0]
-        // ShowMoreDetails: false
-        // Speakers: Array[1]
-        // 0: Object
-        // Biography: "The best developer conference!"
-        // Company: null
-        // Facebook: null
-        // FirstName: "That"
-        // GitHub: null
-        // GooglePlus: null
-        // HeadShot: "/cloud/profilephotos/That-Conference-b09e7430-5905-418e-b775-fb08f8e814c8-635349489932052255.png"
-        // LastName: "Conference"
-        // LastUpdated: "2014-05-14T14:24:22.567"
-        // LinkedIn: null
-        // Title: null
-        // Twitter: "@ThatConference"
-        // UserName: "TCAdmin"
-        // WebSite: "http://www.thatconference.com"
-        // __proto__: Object
-        // length: 1
-        // __proto__: Array[0]
-        // Tags: Array[2]
-        // Title: "GiveCamp and The Humanitarian Toolbox"
-        // Updated: true
-
-        var favoriteSessionIDs = amplify.store("favoriteSessionIDs");
         for (var i = 0; i < data.ScheduledSessions.length; i++) {
             var sessionsByDay = data.ScheduledSessions[i];
             sessionsByDay.selected = ko.observable(false);
@@ -272,7 +196,7 @@ $(function() {
                     var session = sessionsByTimeslot.Sessions[k];
                     var dateTimeString = dateString + " " + sessionsByTimeslot.Time;
                     session.ScheduledDateTime = Date.create(dateTimeString);
-                    session.isFavorite = ko.observable(favoriteSessionIDs && (favoriteSessionIDs.indexOf(session.Id) > -1));
+                    session.isFavorite = ko.observable(false);
                 };
             };
         };
@@ -284,55 +208,50 @@ $(function() {
             viewModel.showOld(true);
         }
 
-        viewModel.favoriteSessionIDs.subscribe(function(newValue) {
-            viewModel.instantOfUpdate = new Date().valueOf();
-            amplify.store("favoriteSessionIDs", newValue);
-            amplify.store("instantOfUpdate", viewModel.instantOfUpdate);
-            saveToDropbox();
+        getFavorites((favoriteSessionIDs) => {
+            viewModel.sessions().each((session) => {
+                session.isFavorite(favoriteSessionIDs && favoriteSessionIDs.indexOf(session.Id) > -1);
+            });
+            viewModel.favoriteSessionIDs.subscribe((newValue) => {
+                saveFavorites(newValue);
+            });
         });
-
-        viewModel.selectedDay.subscribe(function(newValue) {
-            if (newValue) {
-                amplify.store("selectedDateValue", newValue.Day.valueOf());
-            }
-        });
-
     });
 
-    function saveToDropbox() {
+    function getFavorites(callback: (favoriteSessionIDs: number[]) => void) {
+        var cookies: DropboxModel = {
+            favoriteSessionIDs: amplify.store("favoriteSettinIDs"),
+            instantOfUpdate: amplify.store("instantOfUpdate")
+        };
         var client = viewModel.dropboxClient();
-        if (client) {
-            var data = {
-                favoriteSessionIDs: viewModel.favoriteSessionIDs(),
-                instantOfUpdate: viewModel.instantOfUpdate
-            };
+        if (client && client.isAuthenticated()) {
+            client.readFile("data.json", (error: Dropbox.ApiError, fileContents: string) => {
+                var dropbox: DropboxModel = JSON.parse(fileContents);
+                if (dropbox.instantOfUpdate > cookies.instantOfUpdate) {
+                    callback(dropbox.favoriteSessionIDs);
+                }
+                else {
+                    callback(cookies.favoriteSessionIDs);
+                }
+            });
+        }
+        else {
+            callback(cookies.favoriteSessionIDs);
+        }
+    }
+
+    function saveFavorites(favorites: number[]): void {
+        var data: DropboxModel = {
+            instantOfUpdate: new Date().valueOf(),
+            favoriteSessionIDs: favorites
+        };
+        amplify.store("favoriteSessionIDs", data.favoriteSessionIDs);
+        amplify.store("instantOfUpdate", data.instantOfUpdate);
+        if (viewModel.dropboxClient()) {
             viewModel.savingToDropbox(true);
-            client.writeFile("data.json", JSON.stringify(data), function(error, stat) {
+            viewModel.dropboxClient().writeFile("data.json", JSON.stringify(data), (error, stat) => {
                 viewModel.savingToDropbox(false);
             });
         }
     }
-
-    function readFromDropbox() {
-        var dropboxClient: Dropbox.Client = viewModel.dropboxClient();
-        dropboxClient.readFile("data.json", (error, dataString) => {
-            if (!error) {
-                let data: DropboxModel = JSON.parse(dataString);
-                var favoriteSessionIDs = data.favoriteSessionIDs;
-                if (data.instantOfUpdate > viewModel.instantOfUpdate) {
-                    ko.utils.arrayForEach(viewModel.sessions(), function(session) {
-                        session.isFavorite(favoriteSessionIDs.indexOf(session.Id) > -1);
-                    });
-                }
-            }
-        });
-    }
-
-    dropboxClient.authenticate({ interactive: false }, function(error, client: Dropbox.Client) {
-        if (!error && dropboxClient.isAuthenticated()) {
-            viewModel.dropboxClient(dropboxClient);
-            readFromDropbox();
-        }
-    })
-
 });
