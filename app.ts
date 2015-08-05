@@ -18,7 +18,7 @@ app.post("/getSessions", (req, res) => {
   });
 });
 
-var server = app.listen(process.env.PORT || 3000, () => {
+var server = app.listen(process.env.PORT || 8080, () => {
 
   var host = server.address().address;
   var port = server.address().port;

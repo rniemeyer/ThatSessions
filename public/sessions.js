@@ -73,12 +73,7 @@ var ThatSessionsViewModel = (function () {
         this.dropboxClient().authenticate();
     };
     ThatSessionsViewModel.prototype.disconnectDropbox = function () {
-        var _this = this;
-        this.dropboxClient().signOut(function (err) {
-            if (!err) {
-                _this.dropboxClient(null);
-            }
-        });
+        this.dropboxClient().signOut(function (err) { }); //There's really nothing to do after signing out
     };
     //Returns a function that toggles the provided observable
     ThatSessionsViewModel.prototype.toggle = function (observable) {
@@ -140,7 +135,7 @@ $(function () {
         }
         getFavorites(function (favoriteSessionIDs) {
             viewModel.sessions().each(function (session) {
-                session.isFavorite(favoriteSessionIDs && favoriteSessionIDs.indexOf(session.Id) > -1);
+                session.isFavorite(favoriteSessionIDs.indexOf(session.Id) > -1);
             });
             viewModel.favoriteSessionIDs.subscribe(function (newValue) {
                 saveFavorites(newValue);
@@ -148,12 +143,13 @@ $(function () {
         });
     });
     function getFavorites(callback) {
-        var local = amplify.store("favorites") || {};
+        var dflt = { instantOfUpdate: 0, favoriteSessionIDs: [] };
+        var local = amplify.store("favorites") || dflt;
         var client = viewModel.dropboxClient();
         if (client && client.isAuthenticated()) {
             client.readFile("data.json", function (error, fileContents) {
-                var dropbox = fileContents && JSON.parse(fileContents);
-                if ((dropbox && dropbox.instantOfUpdate) > local.instantOfUpdate) {
+                var dropbox = (fileContents && JSON.parse(fileContents)) || dflt;
+                if (dropbox.instantOfUpdate >= local.instantOfUpdate) {
                     callback(dropbox.favoriteSessionIDs);
                 }
                 else {

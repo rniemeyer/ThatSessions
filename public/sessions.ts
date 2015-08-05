@@ -131,11 +131,7 @@ class ThatSessionsViewModel {
     }
 
     disconnectDropbox() {
-        this.dropboxClient().signOut((err) => {
-            if (!err) {
-                this.dropboxClient(null);
-            }
-        });
+        this.dropboxClient().signOut((err) => { }); //There's really nothing to do after signing out
     }
 
     //Returns a function that toggles the provided observable
@@ -203,7 +199,7 @@ $(function() {
 
         getFavorites((favoriteSessionIDs) => {
             viewModel.sessions().each((session) => {
-                session.isFavorite(favoriteSessionIDs && favoriteSessionIDs.indexOf(session.Id) > -1);
+                session.isFavorite(favoriteSessionIDs.indexOf(session.Id) > -1);
             });
             viewModel.favoriteSessionIDs.subscribe((newValue) => {
                 saveFavorites(newValue);
@@ -212,12 +208,13 @@ $(function() {
     });
 
     function getFavorites(callback: (favoriteSessionIDs: number[]) => void) {
-        var local: DropboxModel = amplify.store("favorites") || {};
+        var dflt = { instantOfUpdate: 0, favoriteSessionIDs: [] };
+        var local: DropboxModel = amplify.store("favorites") || dflt;
         var client = viewModel.dropboxClient();
         if (client && client.isAuthenticated()) {
             client.readFile("data.json", (error: Dropbox.ApiError, fileContents: string) => {
-                var dropbox: DropboxModel = fileContents && JSON.parse(fileContents);
-                if ((dropbox && dropbox.instantOfUpdate) > local.instantOfUpdate) {
+                var dropbox: DropboxModel = (fileContents && JSON.parse(fileContents)) || dflt;
+                if (dropbox.instantOfUpdate >= local.instantOfUpdate) {
                     callback(dropbox.favoriteSessionIDs);
                 }
                 else {
