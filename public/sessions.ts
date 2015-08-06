@@ -174,8 +174,55 @@ $(function() {
     var viewModel = new ThatSessionsViewModel();
     ko.applyBindings(viewModel);
     
+    function indexObject(obj, index: { }) {
+        if (obj && obj["$id"]) {
+            index[obj["$id"]] = obj;
+            var keys = Object.keys(obj);
+            for (var keyIdx = 0; keyIdx < keys.length; keyIdx++) {
+                var prop= obj[keys[keyIdx]];
+                if (_.isArray(prop)) {
+                    for (var propIdx = 0; propIdx < prop.length; propIdx++) {
+                        indexObject(prop[propIdx], index);
+                    }
+                }
+                else {
+                    indexObject(prop, index);
+                }
+            }
+        }
+    }
+    
+    function hydrateObjectFromIndex(obj, index: { }) {
+        if (obj && _.isObject(obj)) {
+            var keys = Object.keys(obj);
+            for (var keyIdx = 0; keyIdx < keys.length; keyIdx++) {
+                var prop = obj[keys[keyIdx]];
+                if (prop) {
+                    if (_.isArray(prop)) {
+                        for (var propIdx = 0; propIdx < prop.length; propIdx++) {
+                            var propElmt = prop[propIdx];
+                            if (propElmt["$ref"]) {
+                                prop[propIdx] = index[propElmt["$ref"]];
+                            }
+                            hydrateObjectFromIndex(prop[propIdx], index);
+                        }
+                    }
+                    else {
+                        if (prop["$ref"]) {
+                            obj[keys[keyIdx]] = index[prop["$ref"]];
+                        }
+                        hydrateObjectFromIndex(obj[keys[keyIdx]], index);
+                    }
+                }
+            }
+        }
+    }
+    
     amplify.request.define("sessions", "ajax", { url: "/getSessions", type: "POST" });
     amplify.request("sessions", function(data) {
+        var index = {};
+        indexObject(data, index);
+        hydrateObjectFromIndex(data, index);
         for (var i = 0; i < data.ScheduledSessions.length; i++) {
             var sessionsByDay = data.ScheduledSessions[i];
             sessionsByDay.selected = ko.observable(false);
