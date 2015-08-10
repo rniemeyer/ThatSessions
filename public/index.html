@@ -104,25 +104,27 @@
         <!-- ko foreach: selectedSessions -->
         <div class="row">
             <div class="well well-small">
-                <!--<h5>-->
-                    <button class="btn btn-mini" data-bind="css: { 'btn-inverse': isFavorite }, click: $root.toggle(isFavorite)" title="Favorite?">
-                        <i class="icon-star" data-bind="css: { 'icon-white': isFavorite }"></i>
-                    </button>
-                    <span class="label label-info" data-bind="text: ScheduledDateTime.format('{h}:{mm} {tt}') + ' | ' + ScheduledRoom">
-                    </span>
-					<span class="label" data-bind="text: Category + ' | ' + Level">
-                    </span>
-					<strong data-bind="text: Title"></strong>
-                    <!--<span data-bind="text: ScheduledRoom"></span>-->
-                    <!-- ko foreach: Speakers -->
-                    <small style="margin-right: 5px">
-                        <a data-bind="text: FirstName + ' ' + LastName, attr: { href: WebSite }"></a>
-                    </small>
-                    <!-- /ko -->
-                    <a class="btn btn-mini" href="javascript:void(0)" data-bind="collapse: '#desc' + Id"
-                        title="show description"><i class="icon-align-justify"></i></a>
-                <!--</h5>-->
-                <p data-bind="text: Description, attr: { id: 'desc' + Id }" class="collapse">
+                <button class="btn btn-mini" data-bind="css: { 'btn-inverse': isFavorite }, click: $root.toggle(isFavorite)" title="Favorite?">
+                    <i class="icon-star" data-bind="css: { 'icon-white': isFavorite }"></i>
+                </button>
+                <span class="label label-info" data-bind="text: ScheduledDateTime.format('{h}:{mm} {tt}') + ' | ' + ScheduledRoom">
+                </span>
+				<span class="label" data-bind="text: Category + ' | ' + Level">
+                </span>
+				<strong data-bind="text: Title"></strong>
+                <!--<span data-bind="text: ScheduledRoom"></span>-->
+                <!-- ko foreach: Speakers -->
+                <small style="margin-right: 5px">
+                    <a data-bind="text: FirstName + ' ' + LastName, attr: { href: WebSite }"></a>
+                </small>
+                <!-- /ko -->
+                <a class="btn btn-mini" href="javascript:void(0)" data-bind="collapse: '#desc' + Id"
+                    title="show description"><i class="icon-align-justify"></i></a>
+                <p data-bind="attr: { id: 'desc' + Id }" class="collapse" style="margin: 0">
+                    <span data-bind="foreach: Speakers" class="pull-left" style="margin: 0.3em 0.5em 0 0">
+                        <img data-bind="attr: { src: '//www.thatconference.com' + HeadShot }" style="height: 10em">
+                    </span>                 
+                    <span data-bind="text: Description" style="margin-top: 1em"></span>
                 </p>
             </div>
         </div>
