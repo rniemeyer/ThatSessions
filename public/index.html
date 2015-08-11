@@ -1,145 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <script>
-        if (window.location.protocol != "https:" && window.location.host.toLowerCase() === "thatsessions.azurewebsites.net")
-        {
-            window.location.href = "https:" + window.location.href.substring(window.location.protocol.length);
-        }
-    </script>
-    <title>That Conference / Sessions</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.1/css/bootstrap.min.css" rel="stylesheet" media="screen">
-    <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.1/css/bootstrap-responsive.min.css" rel="stylesheet" media="screen">
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.min.css">
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/amplifyjs/1.1.0/amplify.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.2.1/knockout-min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/sugar/1.3.9/sugar.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/dropbox.js/0.10.2/dropbox.min.js"></script>
-    <script src="//cdn.firebase.com/js/client/2.2.9/firebase.js"></script>
-    <script>
-      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
     
-      ga('create', 'UA-43406320-1', 'auto');
-      ga('send', 'pageview');
-    </script>
-</head>
-<body>
-    <div class="navbar navbar-inverse navbar-static-top">
-        <div class="navbar-inner">
-            <a class="brand visible-phone" href="#">
+    <head>
+        <script>
+            if (window.location.protocol != "https:" && window.location.host.toLowerCase() === "thatsessions.azurewebsites.net")
+            {
+                window.location.href = "https:" + window.location.href.substring(window.location.protocol.length);
+            }
+        </script>
+        <title>That Conference / Sessions</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.1/css/bootstrap.min.css" rel="stylesheet" media="screen">
+        <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.1/css/bootstrap-responsive.min.css" rel="stylesheet"
+        media="screen">
+        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.min.css">
+        <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/amplifyjs/1.1.0/amplify.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/knockout/2.2.1/knockout-min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/sugar/1.3.9/sugar.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/dropbox.js/0.10.2/dropbox.min.js"></script>
+        <script src="//cdn.firebase.com/js/client/2.2.9/firebase.js"></script>
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+              })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            
+              ga('create', 'UA-43406320-1', 'auto');
+              ga('send', 'pageview');
+        </script>
+    </head>
+    
+    <body>
+        <div class="navbar navbar-inverse navbar-static-top">
+            <div class="navbar-inner">
+                <a class="brand visible-phone" href="#">
                 <img src="https://www.thatconference.com/images/Nav-Tree.png" style="height: 1em;">
             </a>
-			<a class="brand visible-tablet visible-desktop" href="#">That Conference / Sessions</a>
-            <div class="btn-group">
-                <a class="btn dropdown-toggle" data-toggle="dropdown" href="#" data-bind="css: { 'btn-success': dropboxAuthenticated, 'btn-info': !dropboxAuthenticated() }">
+                <a class="brand visible-tablet visible-desktop" href="#">That Conference / Sessions</a>
+                <div class="btn-group">
+                    <a class="btn dropdown-toggle" data-toggle="dropdown" href="#" data-bind="css: { 'btn-success': dropboxAuthenticated, 'btn-info': !dropboxAuthenticated() }">
                     <i class="fa fa-dropbox"></i>
                     <i class="fa" data-bind="css: { 'fa-spin': savingToDropbox, 'fa-refresh': savingToDropbox, 'fa-caret-down': !savingToDropbox() }"></i>
                 </a>
-                <ul class="dropdown-menu">
-                    <li><a href="#" data-bind="{ click: disconnectDropbox, visible: dropboxAuthenticated }">Log out</a></li>
-                    <li><a href="#" data-bind="{ click: connectDropbox, visible: !dropboxAuthenticated() }">Log in</a></li>
-                </ul>
-            </div>
-            <form class="navbar-search pull-right" data-bind="submit: doNothing">
-				<input type="text" class="search-query input-small" placeholder="Search" data-bind="value: search, valueUpdate: 'afterkeydown'" />
-			</form>
-        </div>
-    </div>
-
-    <div class="container">
-        <div class="row">
-            <div class="btn-group" style="margin-top: 3px; margin-bottom: 3px;">
-                <button class="btn btn-small" data-bind="css: { 'btn-inverse': onlyFavorites }, click: toggle(onlyFavorites)" title="Show only favorites">
-                    <i class="icon-star" data-bind="css: { 'icon-white': onlyFavorites }"></i>
-                    <span class="visible-tablet visible-desktop">only</span>
-                </button>
-                <button class="btn btn-small" data-bind="css: { 'btn-inverse': showMap }, click: toggle(showMap)" title="Show conference center map">
-                    <i class="icon-picture" data-bind="css: { 'icon-white': showMap }"></i>
-                    <span class="visible-tablet visible-desktop">Show map</span>
-                </button>
-				<button class="btn btn-small" data-bind="css: { 'btn-inverse': showOld }, click: toggle(showOld)" title="Show old sessions">
-                    <i class="icon-time" data-bind="css: { 'icon-white': showOld }"></i>
-                    <span class="visible-tablet visible-desktop">Show old</span>
-                </button>
-            </div>
-			<div class="btn-group" data-bind="foreach: days" style="margin-top: 3px; margin-bottom: 3px;">
-                <button class="btn btn-small" data-bind="css: { 'btn-inverse': selected }, click: $root.selectDay($root)">
-                    <!--<span class="badge badge-info" style="margin-right: 5px" data-bind="text: count"></span>-->
-                    <span class="visible-tablet visible-desktop" data-bind="text: Day.format('{Weekday}')"></span>
-                    <span class="visible-phone" data-bind="text: Day.format('{Dow}')"></span>
-                </button>
-            </div>
-            <div class="btn-group" style="margin-top: 3px; margin-bottom: 3px;">
-    			<button class="btn btn-small" data-bind="css: { 'btn-inverse': showAbout }, click: toggle(showAbout)" title="About this page">
-    				<i class="icon-question-sign" data-bind="css: { 'icon-white': showAbout }"></i>
-    				<span class="visible-tablet visible-desktop">About</span>
-    			</button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a href="#" data-bind="{ click: disconnectDropbox, visible: dropboxAuthenticated }">Log out</a>
+                        </li>
+                        <li>
+                            <a href="#" data-bind="{ click: connectDropbox, visible: !dropboxAuthenticated() }">Log in</a>
+                        </li>
+                    </ul>
+                </div>
+                <form class="navbar-search pull-right" data-bind="submit: doNothing">
+                    <input type="text" class="search-query input-small" placeholder="Search" data-bind="value: search, valueUpdate: 'afterkeydown'"
+                    />
+                </form>
             </div>
         </div>
-        
-        <div class="row">
-            <div class="alert alert-info text-center" role="alert" data-bind="visible: loadingSessions">Loading sessions
-                <i class="fa fa-circle-o-notch fa-spin"></i>
+        <div class="container">
+            <div class="row">
+                <div class="btn-group" style="margin-top: 3px; margin-bottom: 3px;">
+                    <button class="btn btn-small" data-bind="css: { 'btn-inverse': onlyFavorites }, click: toggle(onlyFavorites)" title="Show only favorites">
+                        <i class="icon-star" data-bind="css: { 'icon-white': onlyFavorites }"></i>
+                        <span class="visible-tablet visible-desktop">only</span>
+                    </button>
+                    <button class="btn btn-small" data-bind="css: { 'btn-inverse': showMap }, click: toggle(showMap)" title="Show conference center map">
+                        <i class="icon-picture" data-bind="css: { 'icon-white': showMap }"></i>
+                        <span class="visible-tablet visible-desktop">Show map</span>
+                    </button>
+                    <button class="btn btn-small" data-bind="css: { 'btn-inverse': showOld }, click: toggle(showOld)" title="Show old sessions">
+                        <i class="icon-time" data-bind="css: { 'icon-white': showOld }"></i>
+                        <span class="visible-tablet visible-desktop">Show old</span>
+                    </button>
+                </div>
+                <div class="btn-group" data-bind="foreach: days" style="margin-top: 3px; margin-bottom: 3px;">
+                    <button class="btn btn-small" data-bind="css: { 'btn-inverse': selected }, click: $root.selectDay($root)">
+                        <!--<span class="badge badge-info" style="margin-right: 5px" data-bind="text: count"></span>-->
+                        <span class="visible-tablet visible-desktop" data-bind="text: Day.format('{Weekday}')"></span>
+                        <span class="visible-phone" data-bind="text: Day.format('{Dow}')"></span>
+                    </button>
+                </div>
+                <div class="btn-group" style="margin-top: 3px; margin-bottom: 3px;">
+                    <button class="btn btn-small" data-bind="css: { 'btn-inverse': showAbout }, click: toggle(showAbout)" title="About this page">
+                        <i class="icon-question-sign" data-bind="css: { 'icon-white': showAbout }"></i>
+                        <span class="visible-tablet visible-desktop">About</span>
+                    </button>
+                </div>
             </div>
-        </div>
-
-        <img data-bind="visible: showMap" src="//www.thatconference.com/content/support/thatmap.png" />
-		
-		<div class="well about" data-bind="visible: showAbout">
-			<h3>About this Page</h3>
-			<p>Developed by <a href="http://twitter.com/mheggeseth">Michael Heggeseth</a> (feedback, please!) using 
-				<a href="http://getbootstrap.com/2.3.2/">Twitter Bootstrap</a> (style, responsive design),
-				<a href="http://knockoutjs.com">KnockoutJS</a> (data binding, page behavior),
-				<a href="http://amplifyjs.com">AmplifyJS</a> (AJAX request, in-browser data storage),
-				<a href="http://jquery.com">jQuery</a> (dependency of AmplifyJS.request, minor DOM manipulation), and
-				<a href="http://sugarjs.com">Sugar</a> (useful utilities for dates and arrays)</p>
-			<p>
-			<a class="btn btn-primary" href="http://github.com/mheggeseth/ThatSessions">
+            <div class="row">
+                <div class="alert alert-info text-center" role="alert" data-bind="visible: loadingSessions">Loading sessions
+                    <i class="fa fa-circle-o-notch fa-spin"></i>
+                </div>
+            </div>
+            <img data-bind="visible: showMap" src="//www.thatconference.com/content/support/thatmap.png" />
+            <div class="well about" data-bind="visible: showAbout">
+                <h3>About this Page</h3>
+                <p>Developed by
+                    <a href="http://twitter.com/mheggeseth">Michael Heggeseth</a>(feedback, please!) using
+                    <a href="http://getbootstrap.com/2.3.2/">Twitter Bootstrap</a>(style, responsive design),
+                    <a href="http://knockoutjs.com">KnockoutJS</a>(data binding, page behavior),
+                    <a href="http://amplifyjs.com">AmplifyJS</a>(AJAX request, in-browser data storage),
+                    <a href="http://jquery.com">jQuery</a>(dependency of AmplifyJS.request, minor DOM manipulation), and
+                    <a href="http://sugarjs.com">Sugar</a>(useful utilities for dates and arrays)</p>
+                <p>
+                    <a class="btn btn-primary" href="http://github.com/mheggeseth/ThatSessions">
 				GitHub
 			</a>
-		  </p>
-		</div>
-
-        <!-- ko foreach: selectedSessions -->
-        <div class="row">
-            <div class="well well-small">
-                <button class="btn btn-mini" data-bind="css: { 'btn-inverse': isFavorite }, click: $root.toggle(isFavorite)" title="Favorite?">
-                    <span data-bind="text: favoriteCount"></span>
-                    <i class="icon-star" data-bind="css: { 'icon-white': isFavorite }"></i>
-                </button>
-                <span class="label label-info" data-bind="text: ScheduledDateTime.format('{h}:{mm} {tt}') + ' | ' + ScheduledRoom">
-                </span>
-				<span class="label" data-bind="text: Category + ' | ' + Level">
-                </span>
-				<strong data-bind="text: Title"></strong>
-                <!--<span data-bind="text: ScheduledRoom"></span>-->
-                <!-- ko foreach: Speakers -->
-                <small style="margin-right: 5px">
-                    <a data-bind="text: FirstName + ' ' + LastName, attr: { href: WebSite }"></a>
-                </small>
-                <!-- /ko -->
-                <a class="btn btn-mini" href="javascript:void(0)" data-bind="collapse: '#desc' + Id"
-                    title="show description"><i class="icon-align-justify"></i></a>
-                <p data-bind="attr: { id: 'desc' + Id }" class="collapse" style="margin: 0">
-                    <span data-bind="foreach: Speakers" class="pull-left" style="margin: 0.3em 0.5em 0 0">
-                        <img data-bind="attr: { src: '//www.thatconference.com' + HeadShot + '?w=150&h=150' }">
-                    </span>                 
-                    <span data-bind="text: Description" style="margin-top: 1em"></span>
                 </p>
             </div>
+            <!-- ko foreach: selectedSessions -->
+            <div class="row">
+                <div class="well well-small">
+                    <button class="btn btn-mini" data-bind="css: { 'btn-inverse': isFavorite }, click: $root.toggle(isFavorite)" title="Favorite?">
+                        <span data-bind="text: favoriteCount"></span>
+                        <i class="icon-star" data-bind="css: { 'icon-white': isFavorite }"></i>
+                    </button>
+                    <span class="label label-info" data-bind="text: ScheduledDateTime.format('{h}:{mm} {tt}') + ' | ' + ScheduledRoom"></span>
+                    <span class="label" data-bind="text: Category + ' | ' + Level"></span>
+                    <strong data-bind="text: Title"></strong>
+                    <!--<span data-bind="text: ScheduledRoom"></span>-->
+                    <!-- ko foreach: Speakers -->
+                    <small style="margin-right: 5px">
+                        <a data-bind="text: FirstName + ' ' + LastName, attr: { href: WebSite }"></a>
+                    </small>
+                    <!-- /ko -->
+                    <a class="btn btn-mini" href="javascript:void(0)" data-bind="collapse: '#desc' + Id" title="show description"><i class="icon-align-justify"></i></a>
+                    <p data-bind="attr: { id: 'desc' + Id }" class="collapse" style="margin: 0">
+                        <span data-bind="foreach: Speakers" class="pull-left" style="margin: 0.3em 0.5em 0 0">
+                            <img data-bind="attr: { src: '//www.thatconference.com' + HeadShot + '?w=150&h=150' }">
+                        </span>
+                        <span data-bind="text: Description" style="margin-top: 1em"></span>
+                    </p>
+                </div>
+            </div>
+            <!-- /ko -->
         </div>
-        <!-- /ko -->
-    </div>
+        <script type="text/javascript" src="sessions.js"></script>
+    </body>
 
-    <script type="text/javascript" src="sessions.js"></script>
-
-</body>
 </html>
-
