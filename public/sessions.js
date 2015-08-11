@@ -47,7 +47,8 @@ var ThatSessionsViewModel = (function () {
                 var searchResult = true;
                 if (search) {
                     searchResult = false;
-                    searchResult = (session.Title.toLowerCase().indexOf(search) > -1) || (session.Description.toLowerCase().indexOf(search) > -1);
+                    var tagString = session.Tags.map(function (tag) { return tag.Name; }).join(" ");
+                    searchResult = (session.Title.toLowerCase().indexOf(search) > -1) || (session.Description.toLowerCase().indexOf(search) > -1) || (tagString.toLowerCase().indexOf(search) > -1);
                     searchResult = searchResult || !!ko.utils.arrayFirst(session.Speakers, function (person) {
                         return (person.FirstName.toLowerCase().indexOf(search) > -1) || (person.LastName.toLowerCase().indexOf(search) > -1);
                     });
@@ -57,7 +58,7 @@ var ThatSessionsViewModel = (function () {
                 var favoritesResult = !_this.onlyFavorites() || session.isFavorite();
                 return (session.Accepted && dateResult && searchResult && favoritesResult && timeResult);
             });
-            return selectedSessions.sortBy(function (session) { return session.ScheduledDateTime.valueOf() + parseInt(session.Level, 10); });
+            return selectedSessions.sortBy(function (session) { return session.ScheduledDateTime.valueOf() + session.Category + parseInt(session.Level, 10); });
         });
         this.dropboxClient().authenticate({ interactive: false }, function (err, client) {
             _this.dropboxAuthenticated(client.isAuthenticated());

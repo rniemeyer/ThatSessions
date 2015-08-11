@@ -35,7 +35,7 @@ interface ThatSession {
     SessionLinks: Array<string>;
     ShowMoreDetails: boolean;
     Speakers: ThatSpeaker[];
-    Tags: string[];
+    Tags: { Name: string }[];
     Title: string;
     Updated: boolean;
 }
@@ -102,7 +102,8 @@ class ThatSessionsViewModel {
             var searchResult = true;
             if (search) {
                 searchResult = false;
-                searchResult = (session.Title.toLowerCase().indexOf(search) > -1) || (session.Description.toLowerCase().indexOf(search) > -1);
+                var tagString = session.Tags.map((tag) => tag.Name).join(" ");
+                searchResult = (session.Title.toLowerCase().indexOf(search) > -1) || (session.Description.toLowerCase().indexOf(search) > -1) || (tagString.toLowerCase().indexOf(search) > -1);
                 searchResult = searchResult || !!ko.utils.arrayFirst(session.Speakers, (person) => {
                     return (person.FirstName.toLowerCase().indexOf(search) > -1) || (person.LastName.toLowerCase().indexOf(search) > -1);
                 });
@@ -112,7 +113,7 @@ class ThatSessionsViewModel {
             var favoritesResult = !this.onlyFavorites() || session.isFavorite();
             return (session.Accepted && dateResult && searchResult && favoritesResult && timeResult);
         });
-        return selectedSessions.sortBy((session) => session.ScheduledDateTime.valueOf() + parseInt(session.Level, 10));
+        return selectedSessions.sortBy((session) => session.ScheduledDateTime.valueOf() + session.Category + parseInt(session.Level, 10));
     });
 
     constructor() {

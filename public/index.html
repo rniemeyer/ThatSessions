@@ -133,6 +133,13 @@
                             <img data-bind="attr: { src: '//www.thatconference.com' + HeadShot + '?w=150&h=150' }">
                         </span>
                         <span data-bind="text: Description" style="margin-top: 1em"></span>
+                        <small style="margin-right: 5px">
+                            Tags:
+                            <!-- ko foreach: Tags -->
+                                <span data-bind="text: Name"></span>
+                            <!-- /ko -->
+                        </small>
+                        
                     </p>
                 </div>
             </div>
