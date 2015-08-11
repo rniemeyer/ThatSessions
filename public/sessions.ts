@@ -264,7 +264,7 @@ $(function() {
         });
         
         //TODO: Handle if no data comes back from Firebase
-        myFirebaseRef.once("value", (snapshot: FirebaseDataSnapshot) => {
+        myFirebaseRef.once("value", (snapshot) => {
             viewModel.firebaseModel = snapshot.val() || { favoriteCounts: {}, idsLoaded: {} };
             gotFirebase = true;
             if (gotFavorites && gotFirebase) {
@@ -280,7 +280,7 @@ $(function() {
                 })
             });
             // Then set up Firebase.on handler
-            myFirebaseRef.on("value", (snapshot: FirebaseDataSnapshot) => {
+            myFirebaseRef.on("value", (snapshot) => {
                 viewModel.firebaseModel = snapshot.val() || { favoriteCounts: {}, idsLoaded: {} };
                 viewModel.sessions().each((session) => {
                     session.favoriteCount(viewModel.firebaseModel.favoriteCounts[session.Id] || 0);
