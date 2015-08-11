@@ -5,6 +5,7 @@
 /// <reference path="../typings/amplifyjs/amplifyjs.d.ts"/>
 /// <reference path="../typings/bootstrap/bootstrap.d.ts"/>
 /// <reference path="../typings/sugarjs/sugar.d.ts"/>
+/// <reference path="../typings/firebase/firebase.d.ts"/>
 var ThatSessionsViewModel = (function () {
     function ThatSessionsViewModel() {
         var _this = this;
@@ -12,27 +13,18 @@ var ThatSessionsViewModel = (function () {
         this.showOld = ko.observable(false);
         this.search = ko.observable("");
         this.delayedSearch = ko.computed(this.search).extend({ throttle: 250 });
-        this.onlyFavorites = ko.observable(false);
+        this.onlyFavorites = ko.observable(amplify.store("onlyFavorites") || false);
         this.showMap = ko.observable(false);
         this.showAbout = ko.observable(false);
         this.dropboxClient = ko.observable(new Dropbox.Client({ key: "9keh9sopjf08vhi" }));
         this.dropboxAuthenticated = ko.observable(false);
         this.savingToDropbox = ko.observable(false);
+        this.firebaseModel = {};
         //Computeds
         this.days = ko.computed(function () {
             var days = ko.utils.arrayFilter(_this.sessionsByDay(), function (day) { return _this.showOld() || day.Day >= Date.create("today"); });
             if (days.length) {
-                var selectedDateValue = amplify.store("selectedDateValue");
-                var selectedDay;
-                if (selectedDateValue) {
-                    selectedDay = ko.utils.arrayFirst(days, function (day) { return day.Day.valueOf() === selectedDateValue; });
-                }
-                if (selectedDay) {
-                    selectedDay.selected(true);
-                }
-                else {
-                    days[0].selected(true); //Select the first day by default
-                }
+                days[0].selected(true);
             }
             return days;
         });
@@ -48,7 +40,6 @@ var ThatSessionsViewModel = (function () {
         });
         this.selectedDay = ko.computed(function () { return ko.utils.arrayFirst(_this.sessionsByDay(), function (day) { return day.selected(); }); });
         this.selectedSessions = ko.computed(function () {
-            //var selectedCategories = ko.utils.arrayMap(this.selectedCategories(), function (category) { return category.name; });
             var selectedDay = _this.selectedDay();
             var search = _this.delayedSearch().toLowerCase();
             var selectedSessions = ko.utils.arrayFilter(_this.sessions(), function (session) {
@@ -63,7 +54,6 @@ var ThatSessionsViewModel = (function () {
                 var dateResult = selectedDay && session.ScheduledDateTime.clone().beginningOfDay().valueOf() === selectedDay.Day.valueOf();
                 var timeResult = _this.showOld() || session.ScheduledDateTime.clone().addHours(1).isFuture();
                 var favoritesResult = !_this.onlyFavorites() || session.isFavorite();
-                //return ((selectedCategories.indexOf(session.Category) > -1) && searchResult);
                 return (session.Accepted && dateResult && searchResult && favoritesResult && timeResult);
             });
             return selectedSessions.sortBy(function (session) { return session.ScheduledDateTime.valueOf() + parseInt(session.Level, 10); });
@@ -71,6 +61,7 @@ var ThatSessionsViewModel = (function () {
         this.dropboxClient().authenticate({ interactive: false }, function (err, client) {
             _this.dropboxAuthenticated(client.isAuthenticated());
         });
+        this.onlyFavorites.subscribe(function (newValue) { return amplify.store("onlyFavorites", newValue); });
     }
     ThatSessionsViewModel.prototype.connectDropbox = function () {
         var _this = this;
@@ -115,6 +106,7 @@ $(function () {
             }
         }
     });
+    var myFirebaseRef = new Firebase("https://sizzling-heat-7534.firebaseio.com");
     var viewModel = new ThatSessionsViewModel();
     ko.applyBindings(viewModel);
     function indexObject(obj, index) {
@@ -176,6 +168,7 @@ $(function () {
                     var dateTimeString = dateString + " " + sessionsByTimeslot.Time;
                     session.ScheduledDateTime = Date.create(dateTimeString);
                     session.isFavorite = ko.observable(false);
+                    session.favoriteCount = ko.observable(0);
                 }
                 ;
             }
@@ -187,15 +180,61 @@ $(function () {
         if (!futureSessions.length) {
             viewModel.showOld(true);
         }
+        var gotFavorites = false, gotFirebase = false;
         getFavorites(function (favoriteSessionIDs) {
+            gotFavorites = true;
             viewModel.sessions().each(function (session) {
                 session.isFavorite(favoriteSessionIDs.indexOf(session.Id) > -1);
+                session.isFavorite.subscribe(function (newValue) {
+                    session.favoriteCount(session.favoriteCount() + (newValue ? 1 : -1));
+                });
             });
             viewModel.favoriteSessionIDs.subscribe(function (newValue) {
                 saveFavorites(newValue);
             });
+            if (gotFavorites && gotFirebase) {
+                mergePreExistingFavorites();
+            }
+        });
+        //TODO: Handle if no data comes back from Firebase
+        myFirebaseRef.once("value", function (snapshot) {
+            viewModel.firebaseModel = snapshot.val() || { favoriteCounts: {}, idsLoaded: {} };
+            gotFirebase = true;
+            if (gotFavorites && gotFirebase) {
+                mergePreExistingFavorites();
+            }
+            viewModel.sessions().each(function (session) {
+                session.favoriteCount(viewModel.firebaseModel.favoriteCounts[session.Id] || 0);
+                //ensure updates to favorites get sent to firebase
+                session.favoriteCount.subscribe(function (newValue) {
+                    viewModel.firebaseModel.favoriteCounts = viewModel.firebaseModel.favoriteCounts || {};
+                    viewModel.firebaseModel.favoriteCounts[session.Id] = newValue;
+                    myFirebaseRef.set(viewModel.firebaseModel);
+                });
+            });
+            // Then set up Firebase.on handler
+            myFirebaseRef.on("value", function (snapshot) {
+                viewModel.firebaseModel = snapshot.val() || { favoriteCounts: {}, idsLoaded: {} };
+                viewModel.sessions().each(function (session) {
+                    session.favoriteCount(viewModel.firebaseModel.favoriteCounts[session.Id] || 0);
+                });
+            });
         });
     });
+    function mergePreExistingFavorites() {
+        var userId = viewModel.dropboxClient().dropboxUid() || amplify.store("userId") || generateUUID();
+        amplify.store("userId", userId);
+        if (!viewModel.firebaseModel.idsLoaded[userId]) {
+            viewModel.sessions().each(function (session) {
+                if (session.isFavorite()) {
+                    viewModel.firebaseModel.favoriteCounts[session.Id] = viewModel.firebaseModel.favoriteCounts[session.Id] || 0;
+                    viewModel.firebaseModel.favoriteCounts[session.Id]++;
+                }
+            });
+            viewModel.firebaseModel.idsLoaded[userId] = true;
+            myFirebaseRef.set(viewModel.firebaseModel);
+        }
+    }
     function getFavorites(callback) {
         var local = amplify.store("favorites") || [];
         var client = viewModel.dropboxClient();
@@ -223,5 +262,15 @@ $(function () {
             });
         }
     }
+    function generateUUID() {
+        var d = new Date().getTime();
+        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = (d + Math.random() * 16) % 16 | 0;
+            d = Math.floor(d / 16);
+            return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+        return uuid;
+    }
+    ;
 });
 //# sourceMappingURL=sessions.js.map

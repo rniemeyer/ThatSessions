@@ -5,6 +5,7 @@
 /// <reference path="../typings/amplifyjs/amplifyjs.d.ts"/>
 /// <reference path="../typings/bootstrap/bootstrap.d.ts"/>
 /// <reference path="../typings/sugarjs/sugar.d.ts"/>
+/// <reference path="../typings/firebase/firebase.d.ts"/>
 
 interface ThatDay {
     Day: Date;
@@ -19,6 +20,7 @@ interface ThatTimeslot {
 
 interface ThatSession {
     isFavorite: KnockoutObservable<boolean>;
+    favoriteCount: KnockoutObservable<number>;
     Accepted: boolean;
     Canceled: boolean;
     Category: string;
@@ -55,33 +57,29 @@ interface ThatSpeaker {
     WebSite: string;
 }
 
+interface ThatFirebase {
+    idsLoaded?: { [index: string]: boolean };
+    favoriteCounts?: { [index: number]: number };
+}
+
 class ThatSessionsViewModel {
     sessionsByDay: KnockoutObservableArray<ThatDay> = ko.observableArray([]);
     showOld = ko.observable(false);
     search = ko.observable("");
     delayedSearch = ko.computed<string>(this.search).extend({ throttle: 250 });
-    onlyFavorites = ko.observable(false);
+    onlyFavorites = ko.observable(amplify.store("onlyFavorites") || false);
     showMap = ko.observable(false);
     showAbout = ko.observable(false);
     dropboxClient: KnockoutObservable<Dropbox.Client> = ko.observable(new Dropbox.Client({ key: "9keh9sopjf08vhi" }));
     dropboxAuthenticated = ko.observable(false);
     savingToDropbox = ko.observable(false);
+    firebaseModel: ThatFirebase = {};
 
     //Computeds
     days = ko.computed(() => {
         var days = ko.utils.arrayFilter(this.sessionsByDay(), (day) => this.showOld() || day.Day >= Date.create("today"));
         if (days.length) {
-            var selectedDateValue = amplify.store("selectedDateValue");
-            var selectedDay;
-            if (selectedDateValue) {
-                selectedDay = ko.utils.arrayFirst(days, (day) => day.Day.valueOf() === selectedDateValue);
-            }
-            if (selectedDay) {
-                selectedDay.selected(true);
-            }
-            else {
-                days[0].selected(true); //Select the first day by default
-            }
+            days[0].selected(true);
         }
         return days;
     });
@@ -97,7 +95,6 @@ class ThatSessionsViewModel {
     });
     selectedDay = ko.computed(() => ko.utils.arrayFirst(this.sessionsByDay(), (day) => day.selected()));
     selectedSessions = ko.computed(() => {
-        //var selectedCategories = ko.utils.arrayMap(this.selectedCategories(), function (category) { return category.name; });
         var selectedDay = this.selectedDay();
         var search = this.delayedSearch().toLowerCase();
         var selectedSessions = ko.utils.arrayFilter(this.sessions(), (session) => {
@@ -112,26 +109,26 @@ class ThatSessionsViewModel {
             var dateResult = selectedDay && session.ScheduledDateTime.clone().beginningOfDay().valueOf() === selectedDay.Day.valueOf();
             var timeResult = this.showOld() || session.ScheduledDateTime.clone().addHours(1).isFuture();
             var favoritesResult = !this.onlyFavorites() || session.isFavorite();
-            //return ((selectedCategories.indexOf(session.Category) > -1) && searchResult);
             return (session.Accepted && dateResult && searchResult && favoritesResult && timeResult);
         });
         return selectedSessions.sortBy((session) => session.ScheduledDateTime.valueOf() + parseInt(session.Level, 10));
     });
-    
+
     constructor() {
-        this.dropboxClient().authenticate({ interactive: false }, (err, client : Dropbox.Client) => {
+        this.dropboxClient().authenticate({ interactive: false }, (err, client: Dropbox.Client) => {
             this.dropboxAuthenticated(client.isAuthenticated());
         });
+        this.onlyFavorites.subscribe((newValue) => amplify.store("onlyFavorites", newValue));
     }
 
     connectDropbox() {
-        this.dropboxClient().authenticate((err, client : Dropbox.Client) => {
+        this.dropboxClient().authenticate((err, client: Dropbox.Client) => {
             this.dropboxAuthenticated(client.isAuthenticated());
         });
     }
 
     disconnectDropbox() {
-        this.dropboxClient().signOut((err) => { 
+        this.dropboxClient().signOut((err) => {
             this.dropboxAuthenticated(false);
         });
     }
@@ -171,15 +168,16 @@ $(function() {
         }
     });
 
+    var myFirebaseRef = new Firebase("https://sizzling-heat-7534.firebaseio.com");
     var viewModel = new ThatSessionsViewModel();
     ko.applyBindings(viewModel);
-    
-    function indexObject(obj, index: { }) {
+
+    function indexObject(obj, index: {}) {
         if (obj && obj["$id"]) {
             index[obj["$id"]] = obj;
             var keys = Object.keys(obj);
             for (var keyIdx = 0; keyIdx < keys.length; keyIdx++) {
-                var prop= obj[keys[keyIdx]];
+                var prop = obj[keys[keyIdx]];
                 if (_.isArray(prop)) {
                     for (var propIdx = 0; propIdx < prop.length; propIdx++) {
                         indexObject(prop[propIdx], index);
@@ -191,8 +189,8 @@ $(function() {
             }
         }
     }
-    
-    function hydrateObjectFromIndex(obj, index: { }) {
+
+    function hydrateObjectFromIndex(obj, index: {}) {
         if (obj && _.isObject(obj)) {
             var keys = Object.keys(obj);
             for (var keyIdx = 0; keyIdx < keys.length; keyIdx++) {
@@ -217,7 +215,7 @@ $(function() {
             }
         }
     }
-    
+
     amplify.request.define("sessions", "ajax", { url: "/getSessions", type: "POST" });
     amplify.request("sessions", function(data) {
         var index = {};
@@ -235,6 +233,7 @@ $(function() {
                     var dateTimeString = dateString + " " + sessionsByTimeslot.Time;
                     session.ScheduledDateTime = Date.create(dateTimeString);
                     session.isFavorite = ko.observable(false);
+                    session.favoriteCount = ko.observable(0);
                 };
             };
         };
@@ -246,15 +245,64 @@ $(function() {
             viewModel.showOld(true);
         }
 
+        var gotFavorites = false, gotFirebase = false;
         getFavorites((favoriteSessionIDs) => {
+            gotFavorites = true;
             viewModel.sessions().each((session) => {
                 session.isFavorite(favoriteSessionIDs.indexOf(session.Id) > -1);
+                session.isFavorite.subscribe((newValue) => {
+                    session.favoriteCount(session.favoriteCount() + (newValue ? 1 : -1));
+                });
             });
             viewModel.favoriteSessionIDs.subscribe((newValue) => {
                 saveFavorites(newValue);
             });
+
+            if (gotFavorites && gotFirebase) {
+                mergePreExistingFavorites();
+            }
+        });
+        
+        //TODO: Handle if no data comes back from Firebase
+        myFirebaseRef.once("value", (snapshot: FirebaseDataSnapshot) => {
+            viewModel.firebaseModel = snapshot.val() || { favoriteCounts: {}, idsLoaded: {} };
+            gotFirebase = true;
+            if (gotFavorites && gotFirebase) {
+                mergePreExistingFavorites();
+            }
+            viewModel.sessions().each((session) => {
+                session.favoriteCount(viewModel.firebaseModel.favoriteCounts[session.Id] || 0); 
+                //ensure updates to favorites get sent to firebase
+                session.favoriteCount.subscribe((newValue) => {
+                    viewModel.firebaseModel.favoriteCounts = viewModel.firebaseModel.favoriteCounts || {};
+                    viewModel.firebaseModel.favoriteCounts[session.Id] = newValue;
+                    myFirebaseRef.set(viewModel.firebaseModel);
+                })
+            });
+            // Then set up Firebase.on handler
+            myFirebaseRef.on("value", (snapshot: FirebaseDataSnapshot) => {
+                viewModel.firebaseModel = snapshot.val() || { favoriteCounts: {}, idsLoaded: {} };
+                viewModel.sessions().each((session) => {
+                    session.favoriteCount(viewModel.firebaseModel.favoriteCounts[session.Id] || 0);
+                });
+            });
         });
     });
+
+    function mergePreExistingFavorites() {
+        var userId: string = viewModel.dropboxClient().dropboxUid() || amplify.store("userId") || generateUUID();
+        amplify.store("userId", userId);
+        if (!viewModel.firebaseModel.idsLoaded[userId]) {
+            viewModel.sessions().each((session) => {
+                if (session.isFavorite()) {
+                    viewModel.firebaseModel.favoriteCounts[session.Id] = viewModel.firebaseModel.favoriteCounts[session.Id] || 0;
+                    viewModel.firebaseModel.favoriteCounts[session.Id]++;
+                }
+            });
+            viewModel.firebaseModel.idsLoaded[userId] = true;
+            myFirebaseRef.set(viewModel.firebaseModel);
+        }
+    }
 
     function getFavorites(callback: (favoriteSessionIDs: number[]) => void) {
         var local: number[] = amplify.store("favorites") || [];
@@ -284,4 +332,14 @@ $(function() {
             });
         }
     }
+
+    function generateUUID(): string {
+        var d = new Date().getTime();
+        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = (d + Math.random() * 16) % 16 | 0;
+            d = Math.floor(d / 16);
+            return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+        return uuid;
+    };
 });
