@@ -65,6 +65,7 @@ interface ThatFirebase {
 class ThatSessionsViewModel {
     sessionsByDay: KnockoutObservableArray<ThatDay> = ko.observableArray([]);
     showOld = ko.observable(false);
+    loadingSessions = ko.observable(false);
     search = ko.observable("");
     delayedSearch = ko.computed<string>(this.search).extend({ throttle: 250 });
     onlyFavorites = ko.observable(amplify.store("onlyFavorites") || false);
@@ -217,7 +218,9 @@ $(function() {
     }
 
     amplify.request.define("sessions", "ajax", { url: "/getSessions", type: "POST" });
+    viewModel.loadingSessions(true);
     amplify.request("sessions", function(data) {
+        viewModel.loadingSessions(false);
         var index = {};
         indexObject(data, index);
         hydrateObjectFromIndex(data, index);

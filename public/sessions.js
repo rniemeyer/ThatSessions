@@ -11,6 +11,7 @@ var ThatSessionsViewModel = (function () {
         var _this = this;
         this.sessionsByDay = ko.observableArray([]);
         this.showOld = ko.observable(false);
+        this.loadingSessions = ko.observable(false);
         this.search = ko.observable("");
         this.delayedSearch = ko.computed(this.search).extend({ throttle: 250 });
         this.onlyFavorites = ko.observable(amplify.store("onlyFavorites") || false);
@@ -152,7 +153,9 @@ $(function () {
         }
     }
     amplify.request.define("sessions", "ajax", { url: "/getSessions", type: "POST" });
+    viewModel.loadingSessions(true);
     amplify.request("sessions", function (data) {
+        viewModel.loadingSessions(false);
         var index = {};
         indexObject(data, index);
         hydrateObjectFromIndex(data, index);
