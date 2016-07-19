@@ -119,7 +119,11 @@
                         <i class="icon-star" data-bind="css: { 'icon-white': isFavorite }"></i>
                     </button>
                     <span class="label label-info" data-bind="text: ScheduledDateTime.format('{h}:{mm} {tt}') + ' | ' + ScheduledRoom"></span>
-                    <span class="label" data-bind="text: Category + ' | ' + Level"></span>
+                    <span class="label">
+                        <span data-bind="text: PrimaryCategoryDisplayText"></span><span data-bind="visible: SecondaryCategoryDisplayText, text: ', ' + SecondaryCategoryDisplayText"></span>
+                        |
+                        <span data-bind="text: Level"></span>
+                    </span>
                     <strong data-bind="text: Title"></strong>
                     <!--<span data-bind="text: ScheduledRoom"></span>-->
                     <!-- ko foreach: Speakers -->
