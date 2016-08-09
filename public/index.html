@@ -122,7 +122,7 @@
                         <i class="icon-star" data-bind="css: { 'icon-white': isFavorite }"></i>
                     </button>
                     <span class="label label-info" data-bind="text: ScheduledDateTime.format('{h}:{mm} {tt}') + ' | ' + ScheduledRoom"></span>
-                    <span class="label">
+                    <span class="label" data-bind="css: { 'label-success': IsFamilyApproved, 'label-warning': IsOpenSpaces }">
                         <span data-bind="text: PrimaryCategoryDisplayText"></span><span data-bind="visible: SecondaryCategoryDisplayText, text: ', ' + SecondaryCategoryDisplayText"></span>
                         |
                         <span data-bind="text: Level"></span>

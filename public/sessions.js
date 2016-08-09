@@ -58,7 +58,7 @@ var ThatSessionsViewModel = (function () {
                 var favoritesResult = !_this.onlyFavorites() || session.isFavorite();
                 return (session.Accepted && dateResult && searchResult && favoritesResult && timeResult);
             });
-            return selectedSessions.sortBy(function (session) { return session.ScheduledDateTime.valueOf() + session.Category + parseInt(session.Level, 10); });
+            return selectedSessions.sortBy(function (session) { return session.ScheduledDateTime.valueOf() + session.PrimaryCategory + parseInt(session.Level, 10); });
         });
         this.dropboxClient().authenticate({ interactive: false }, function (err, client) {
             _this.dropboxAuthenticated(client.isAuthenticated());
@@ -97,7 +97,7 @@ var ThatSessionsViewModel = (function () {
         //Bwahahahahaha
     };
     return ThatSessionsViewModel;
-})();
+}());
 $(function () {
     $(".about a").attr("target", "_blank");
     _.extend(ko.bindingHandlers, {
@@ -173,6 +173,11 @@ $(function () {
                     session.ScheduledDateTime = Date.create(dateTimeString);
                     session.isFavorite = ko.observable(false);
                     session.favoriteCount = ko.observable(0);
+                    session.IsOpenSpaces = session.PrimaryCategory.indexOf("Open Spaces") > -1 ||
+                        (session.SecondaryCategory && session.SecondaryCategory.indexOf("Open Spaces") > -1);
+                    session.IsFamilyApproved = session.IsFamilyApproved ||
+                        session.PrimaryCategory.indexOf("Family") > -1 ||
+                        (session.SecondaryCategory && session.SecondaryCategory.indexOf("Family") > -1);
                 }
                 ;
             }

@@ -23,10 +23,12 @@ interface ThatSession {
     favoriteCount: KnockoutObservable<number>;
     Accepted: boolean;
     Canceled: boolean;
-    Category: string;
+    PrimaryCategory: string;
+    SecondaryCategory: string;
     Description: string;
     Id: number;
     IsFamilyApproved: boolean;
+    IsOpenSpaces: boolean;
     IsUserFavorite: boolean;
     LastUpdated: string; //"2014-08-08T11:26:21.693"
     Level: string; //"100"
@@ -113,7 +115,7 @@ class ThatSessionsViewModel {
             var favoritesResult = !this.onlyFavorites() || session.isFavorite();
             return (session.Accepted && dateResult && searchResult && favoritesResult && timeResult);
         });
-        return selectedSessions.sortBy((session) => session.ScheduledDateTime.valueOf() + session.Category + parseInt(session.Level, 10));
+        return selectedSessions.sortBy((session) => session.ScheduledDateTime.valueOf() + session.PrimaryCategory + parseInt(session.Level, 10));
     });
 
     constructor() {
@@ -238,6 +240,11 @@ $(function() {
                     session.ScheduledDateTime = Date.create(dateTimeString);
                     session.isFavorite = ko.observable(false);
                     session.favoriteCount = ko.observable(0);
+                    session.IsOpenSpaces = session.PrimaryCategory.indexOf("Open Spaces") > -1 || 
+                        (session.SecondaryCategory && session.SecondaryCategory.indexOf("Open Spaces") > -1);
+                    session.IsFamilyApproved = session.IsFamilyApproved ||
+                        session.PrimaryCategory.indexOf("Family") > -1 || 
+                        (session.SecondaryCategory && session.SecondaryCategory.indexOf("Family") > -1);
                 };
             };
         };
